@@ -1,0 +1,26 @@
+extend layout
+block main
+	#editor(auto-select="true")
+		| light on
+		| hemisphere medium, low
+		| for x in [-5 .. 5]
+		|     for y in [-5 .. 5]
+		|         for z in [-5 .. 5]
+		|             moveTo x, y, z
+		|             color rotate red, z * 20
+		|             cube .5
+	#display
+		canvas#canvas(style="width:500px;height:500px;")
+		#data
+			span.coordinate-box
+				i x: 
+				span#x 0
+			span.coordinate-box
+				i y: 
+				span#y 0
+			span.coordinate-box
+				i z: 
+				span#z 0
+				
+	script(src="js/vendor/ace/ace.js" type="text/javascript" charset="utf-8")
+	script(src="js/editor.js" type="text/javascript" charset="utf-8")

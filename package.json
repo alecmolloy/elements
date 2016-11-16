@@ -1,0 +1,36 @@
+{
+  "name": "elements",
+  "version": "1.0.0",
+  "description": "Three Dee for everyone",
+  "scripts": {
+    "main": "node ./src/app.js",
+    "buildDev": "browserify src/controller/editor.js -o src/public/js/editor.js",
+    "build": "browserify src/controller/editor.js | uglifyjs -c --screw-ie8 > src/public/js/editor.js",
+    "start": "nodemon ./src/app.js",
+    "dev": "npm run buildDev && npm start"
+  },
+  "author": "Alec Molloy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alecmolloy/elements-editor"
+  },
+  "license": "Unlicense",
+  "dependencies": {
+    "ace-builds": "^1.2.5",
+    "cli-color": "^1.1.0",
+    "coffee-script": "^1.11.1",
+    "color": "^0.11.3",
+    "compression": "^1.6.2",
+    "express": "^4.14.0",
+    "morgan": "^1.7.0",
+    "pm2": "2.0.18",
+    "pug": "^2.0.0-beta6",
+    "three": "0.81.2",
+    "three-orbit-controls": "72.0.0",
+    "uglify-js": "^2.7.3"
+  },
+  "devDependencies": {
+    "browserify": "^13.1.0",
+    "nodemon": "1.11.0"
+  }
+}
