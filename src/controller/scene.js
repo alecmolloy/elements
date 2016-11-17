@@ -47,6 +47,7 @@ function resetModel() {
 
     model.cameraControls = new OrbitControls(model.cameras.main, model.renderer.domElement);
     model.cameraControls.target.set(0, 0, 0);
+    model.renderer.setClearColor(0xffffff, 1);
 }
 
 /*

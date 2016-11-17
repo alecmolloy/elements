@@ -20,8 +20,6 @@ var init = function() {
     model.renderer.gammaOutput = true;
     model.renderer.setPixelRatio(model.ratio);
     model.renderer.setSize(model.width, model.height);
-    model.renderer.setClearColor(0xffffff, 1);
-
 };
 
 var resize = function() {
