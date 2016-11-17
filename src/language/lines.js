@@ -11,7 +11,7 @@ function line(dx, dy, dz) {
     var x = model.cursor.x + dx;
     var y = model.cursor.y + dy;
     var z = model.cursor.z + dz;
-    lineTo(model.cursor.x + dx, model.cursor.y + dy, model.cursor.z + dz);
+    lineTo(x, y, z);
 }
 
 function lineTo(x, y, z) {
