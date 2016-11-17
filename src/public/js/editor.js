@@ -54972,7 +54972,7 @@ var toggleFullscreenDisplay = function() {
         // window.removeEventListener("keyup", escToggle);
     }
     resize();
-}
+};
 
 module.exports = {
     init: init,
@@ -54981,7 +54981,8 @@ module.exports = {
 };
 
 },{"../model":49,"./scene":32,"three":27}],30:[function(require,module,exports){
-var interpreter = require("./interpreter");
+var display = require("./display"),
+    interpreter = require("./interpreter");
 
 var aceEditor = ace.edit("editor");
 aceEditor.setTheme("ace/theme/tomorrow_night_eighties");
@@ -54990,29 +54991,31 @@ aceEditor.getSession().setMode("ace/mode/coffee");
 aceEditor.setBehavioursEnabled(false);
 aceEditor.focus();
 
-aceEditor.on("change", function (e) {
-	console.log(interpreter.run(aceEditor.getValue()));
+aceEditor.on("change", function(e) {
+    console.log(interpreter.run(aceEditor.getValue()));
 });
 
-var setCode = function (value) {
-	aceEditor.setValue(value);
+var setCode = function(value) {
+    aceEditor.setValue(value);
 };
 
-var resetCode = function () {
-	aceEditor.setValue("");
+var resetCode = function() {
+    aceEditor.setValue("");
 };
 
-var loadCode = function () {
-	// to implement
-}
+var loadCode = function() {
+    // to implement
+};
+display.init();
 interpreter.run(aceEditor.getValue());
 
 module.exports = {
-	loadCode: loadCode,
-	resetCode: resetCode,
-	setCode: setCode
+    loadCode: loadCode,
+    resetCode: resetCode,
+    setCode: setCode
 };
-},{"./interpreter":31}],31:[function(require,module,exports){
+
+},{"./display":29,"./interpreter":31}],31:[function(require,module,exports){
 /*
  * Language intepreter module
  *
@@ -55024,7 +55027,8 @@ var coffee = require("coffee-script"),
     THREE = require("three"),
     scene = require("./scene"),
     model = require("../model"),
-    modules = require("../language")
+    modules = require("../language"),
+    languageBlock,
     ERROR_LOC_REGEX = /\s+at Object\.eval \((.+):(\d+):(\d+)\)/;
 
 /*
@@ -55036,12 +55040,9 @@ var coffee = require("coffee-script"),
  * @return {Object|void}
  */
 function run(code) {
-    display.init();
     scene.resetModel();
 
     var compiled;
-    code = preCompile(code || '');
-
     // Attempt compiling coffeescript
     try {
         compiled = coffee.compile(code || '', {
@@ -55067,25 +55068,7 @@ function run(code) {
             type: 'execution'
         };
     }
-}
-
-/*
- * Precompile step - Cleans the code up
- *
- * @param {String} code
- * @return {String}
- */
-function preCompile(code) {
-    "use strict";
-    code = code
-        // Only use fat arrow (Block access to Window through `this`)
-        .replace(/->/g, '=>')
-        // Allow thin arrow on constructor functions
-        .replace(/(constructor\s*\:[^\=]*)=>/g, function(match, start) {
-            return start + '->';
-        });
-
-    return code;
+    scene.render();
 }
 
 /*
@@ -55144,7 +55127,6 @@ function evalInContext(code) {
         }
     }
     eval(code);
-    scene.render();
 }
 
 module.exports = {
@@ -55194,17 +55176,10 @@ function resetModel() {
         z: 0
     };
 
-
     material.updateMaterial();
-
     model.scene = new THREE.Scene();
-    model.clock = new THREE.Clock();
-
     model.cameras = {};
     model.cameras.main = new THREE.PerspectiveCamera(30, 1, 1, 1000000);
-    // model.cameras.x = {}; TODO
-    // model.cameras.y = {};
-    // model.cameras.z = {};
     model.cameras.main.position.copy(model.settings.cameraPosition);
 
     model.cameraControls = new OrbitControls(model.cameras.main, model.renderer.domElement);
@@ -55215,8 +55190,6 @@ function resetModel() {
  * Render loop
  */
 function render() {
-    var delta = model.clock.getDelta();
-    model.cameraControls.update(delta);
     model.renderer.render(model.scene, model.cameras.main);
     if (model.animationID) {
         window.cancelAnimationFrame(model.animationID);
@@ -55255,20 +55228,20 @@ var model = require('../model');
 
 function animate(callback, fps) {
     setTimeout(function() {
-		model.animationRequestID = window.requestAnimationFrame(function (timestamp) {
-			callback(timestamp);
+        model.animationRequestID = window.requestAnimationFrame(function(timestamp) {
+            callback(timestamp);
             animate(callback, fps);
-		});
+        });
     }, 1000 / fps);
 }
 
 module.exports = {
-    animate     : animate
+    animate: animate
 };
 
 },{"../model":49}],34:[function(require,module,exports){
 var THREE = require("three"),
-	model = require("../model");
+    model = require("../model");
 
 /*
  * Set the camera's position
@@ -55280,10 +55253,10 @@ var THREE = require("three"),
  */
 
 function camera(x, y, z) {
-	x = typeof x !== 'undefined' ? x : 100;
-	y = typeof y !== 'undefined' ? y : x;
-	z = typeof z !== 'undefined' ? z : x;
-	model.cameras.main.position.set(x, y, z);
+    x = typeof x !== 'undefined' ? x : 100;
+    y = typeof y !== 'undefined' ? y : x;
+    z = typeof z !== 'undefined' ? z : x;
+    model.cameras.main.position.set(x, y, z);
 }
 
 /*
@@ -55296,24 +55269,25 @@ function camera(x, y, z) {
  */
 
 function cameraTarget(x, y, z) {
-	x = typeof x !== 'undefined' ? x : 0;
-	y = typeof y !== 'undefined' ? y : x;
-	z = typeof z !== 'undefined' ? z : x;
-	model.cameraControls.target.set(x, y, z);
+    x = typeof x !== 'undefined' ? x : 0;
+    y = typeof y !== 'undefined' ? y : x;
+    z = typeof z !== 'undefined' ? z : x;
+    model.cameraControls.target.set(x, y, z);
 }
 
 function lookAt(x, y, z) {
-	x = x || 0;
-	y = y || x;
-	z = z || x;
-	model.cameraControls.target = new THREE.Vector3(x, y, z);
+    x = x || 0;
+    y = y || x;
+    z = z || x;
+    model.cameraControls.target = new THREE.Vector3(x, y, z);
 }
 
 module.exports = {
-	camera: camera,
-	cameraTarget: cameraTarget,
-	lookAt: lookAt
+    camera: camera,
+    cameraTarget: cameraTarget,
+    lookAt: lookAt
 };
+
 },{"../model":49,"three":27}],35:[function(require,module,exports){
 /*
  * Color language module
@@ -55322,9 +55296,9 @@ module.exports = {
  */
 
 var Color = require("color"),
-	model = require("../model"),
-	utils = require("./utils"),
-	material = require("./material");
+    model = require("../model"),
+    utils = require("./utils"),
+    material = require("./material");
 
 /*
  * Set current model color
@@ -55333,9 +55307,9 @@ var Color = require("color"),
  * @return void
  */
 function color(val) {
-	val = utils.parseColor(val);
-	model.settings.color = val || 'transparent';
-	material.updateMaterial();
+    val = utils.parseColor(val);
+    model.settings.color = val || 'transparent';
+    material.updateMaterial();
 }
 
 /*
@@ -55345,7 +55319,7 @@ function color(val) {
  * @return {Boolean}
  */
 function dark(color) {
-	return Color(color).dark();
+    return Color(color).dark();
 }
 
 /*
@@ -55355,7 +55329,7 @@ function dark(color) {
  * @return {Boolean}
  */
 function light(color) {
-	return Color(color).light();
+    return Color(color).light();
 }
 
 /*
@@ -55366,7 +55340,7 @@ function light(color) {
  * @return {String}
  */
 function darken(color, amount) {
-	return brightness(color, brightness(color) - amount);
+    return brightness(color, brightness(color) - amount);
 }
 
 /*
@@ -55377,7 +55351,7 @@ function darken(color, amount) {
  * @return {String}
  */
 function lighten(color, amount) {
-	return brightness(color, brightness(color) + amount);
+    return brightness(color, brightness(color) + amount);
 }
 
 /*
@@ -55388,7 +55362,7 @@ function lighten(color, amount) {
  * @return {String|Number}
  */
 function brightness(color, amount) {
-	return getOrSet('hsl', 2, color, amount);
+    return getOrSet('hsl', 2, color, amount);
 }
 
 /*
@@ -55399,7 +55373,7 @@ function brightness(color, amount) {
  */
 
 function setBrightness(color, amount) {
-	return brightness(color, brightness(color) + amount / 2);
+    return brightness(color, brightness(color) + amount / 2);
 }
 
 /*
@@ -55410,7 +55384,7 @@ function setBrightness(color, amount) {
  * @return {String}
  */
 function saturate(color, amount) {
-	return saturation(color, saturation(color) + amount);
+    return saturation(color, saturation(color) + amount);
 }
 
 /*
@@ -55421,7 +55395,7 @@ function saturate(color, amount) {
  */
 
 function setSaturation(color, amount) {
-	return saturation(color, saturation(color) + amount);
+    return saturation(color, saturation(color) + amount);
 }
 
 /*
@@ -55432,7 +55406,7 @@ function setSaturation(color, amount) {
  * @return {String}
  */
 function desaturate(color, amount) {
-	return saturation(color, saturation(color) - amount);
+    return saturation(color, saturation(color) - amount);
 }
 
 /*
@@ -55443,7 +55417,7 @@ function desaturate(color, amount) {
  * @return {String|Number}
  */
 function saturation(color, amount) {
-	return getOrSet('hsl', 1, color, amount);
+    return getOrSet('hsl', 1, color, amount);
 }
 
 /*
@@ -55454,7 +55428,7 @@ function saturation(color, amount) {
  * @return {String|Number}
  */
 function hue(color, amount) {
-	return getOrSet('hsl', 0, color, amount);
+    return getOrSet('hsl', 0, color, amount);
 }
 
 /*
@@ -55465,7 +55439,7 @@ function hue(color, amount) {
  * @return {String}
  */
 function rotate(color, amount) {
-	return Color(color).rotate(amount).rgbaString();
+    return Color(color).rotate(amount).rgbaString();
 }
 
 /*
@@ -55477,7 +55451,7 @@ function rotate(color, amount) {
  * @return {String}
  */
 function rgb(red, green, blue) {
-	return "rgb(" + red + ", " + green + ", " + blue + ")";
+    return "rgb(" + red + ", " + green + ", " + blue + ")";
 }
 
 /*
@@ -55490,7 +55464,7 @@ function rgb(red, green, blue) {
  * @return {String}
  */
 function rgba(red, green, blue, alpha) {
-	return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
+    return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
 }
 
 /*
@@ -55500,8 +55474,8 @@ function rgba(red, green, blue, alpha) {
  * @return void
  */
 function opacity(val) {
-	model.settings.opacity = val || 1;
-	material.updateMaterial();
+    model.settings.opacity = val || 1;
+    material.updateMaterial();
 }
 
 /*
@@ -55513,8 +55487,8 @@ function opacity(val) {
  * @return {String}
  */
 function mix(a, b, amount) {
-	amount = amount || 50;
-	return Color(a).mix(Color(b), amount / 100).rgbaString();
+    amount = amount || 50;
+    return Color(a).mix(Color(b), amount / 100).rgbaString();
 }
 
 /*
@@ -55527,42 +55501,43 @@ function mix(a, b, amount) {
  * @return {String|Number}
  */
 function getOrSet(mode, key, color, amount) {
-	color = Color(color);
+    color = Color(color);
 
-	if (typeof amount === 'undefined') {
-		return mode ? color.values[mode][key] : color.values[key];
-	}
+    if (typeof amount === 'undefined') {
+        return mode ? color.values[mode][key] : color.values[key];
+    }
 
-	if (key === 'alpha') {
-		return color.alpha(amount).rgbaString();
-	}
+    if (key === 'alpha') {
+        return color.alpha(amount).rgbaString();
+    }
 
-	var values = color.values[mode];
+    var values = color.values[mode];
 
-	values[key] = amount;
+    values[key] = amount;
 
-	return Color().hsl(values).rgbaString();
+    return Color().hsl(values).rgbaString();
 }
 
 module.exports = {
-	color: color,
-	dark: dark,
-	light: light,
-	lighten: lighten,
-	darken: darken,
-	brightness: brightness,
-	mix: mix,
-	saturation: saturation,
-	saturate: saturate,
-	desaturate: desaturate,
-	hue: hue,
-	rotate: rotate,
-	rgb: rgb,
-	rgba: rgba,
-	opacity: opacity,
-	setBrightness: setBrightness,
-	setSaturation: setSaturation
+    color: color,
+    dark: dark,
+    light: light,
+    lighten: lighten,
+    darken: darken,
+    brightness: brightness,
+    mix: mix,
+    saturation: saturation,
+    saturate: saturate,
+    desaturate: desaturate,
+    hue: hue,
+    rotate: rotate,
+    rgb: rgb,
+    rgba: rgba,
+    opacity: opacity,
+    setBrightness: setBrightness,
+    setSaturation: setSaturation
 };
+
 },{"../model":49,"./material":41,"./utils":48,"color":20}],36:[function(require,module,exports){
 /*
  * Compound shapes language module
@@ -55571,68 +55546,68 @@ module.exports = {
  */
 
 var model = require('../model'),
-	THREE = require('three');
+    THREE = require('three');
 
 
 /**
  *
  */
 function capsule(dx, dy, dz, openTop, openBottom) {
-	dx = dx || 0;
-	dy = dy || 0;
-	dz = dz || 0;
-	radius = model.settings.stroke.width;
-	if (typeof radius === 'number') {
-		radius = [radius, radius];
-	}
-	openTop = false;
-	openBottom = false;
+    dx = dx || 0;
+    dy = dy || 0;
+    dz = dz || 0;
+    radius = model.settings.stroke.width;
+    if (typeof radius === 'number') {
+        radius = [radius, radius];
+    }
+    openTop = false;
+    openBottom = false;
 
-	var bottom = new THREE.Vector3(model.cursor.x, model.cursor.y, model.cursor.z);
-	var top = new THREE.Vector3(model.cursor.x + dx, model.cursor.y + dy, model.cursor.z + dz);
+    var bottom = new THREE.Vector3(model.cursor.x, model.cursor.y, model.cursor.z);
+    var top = new THREE.Vector3(model.cursor.x + dx, model.cursor.y + dy, model.cursor.z + dz);
 
-	material = new THREE.MeshPhongMaterial({
-		color: model.settings.stroke.color,
-		shading: model.settings.shading,
-		specular: model.settings.specular,
-		shininess: model.settings.shininess,
-		side : THREE.FrontSide
-	});
+    material = new THREE.MeshPhongMaterial({
+        color: model.settings.stroke.color,
+        shading: model.settings.shading,
+        specular: model.settings.specular,
+        shininess: model.settings.shininess,
+        side: THREE.FrontSide
+    });
 
     var capsule = new THREE.Object3D();
-	// get cylinder height
-	var cylAxis = new THREE.Vector3();
-	cylAxis.subVectors( top, bottom );
-	var length = cylAxis.length();
+    // get cylinder height
+    var cylAxis = new THREE.Vector3();
+    cylAxis.subVectors(top, bottom);
+    var length = cylAxis.length();
 
-	// get cylinder center for translation
-	var center = new THREE.Vector3();
-	center.addVectors( top, bottom );
-	center.divideScalar( 2.0 );
+    // get cylinder center for translation
+    var center = new THREE.Vector3();
+    center.addVectors(top, bottom);
+    center.divideScalar(2.0);
 
-	// always open-ended
-	var cylinderGeo = new THREE.CylinderGeometry(radius[0], radius[1], length, model.settings.poly, 1, (!openTop || !openBottom), 0);
-	var cylinder = new THREE.Mesh( cylinderGeo, material );
+    // always open-ended
+    var cylinderGeo = new THREE.CylinderGeometry(radius[0], radius[1], length, model.settings.poly, 1, (!openTop || !openBottom), 0);
+    var cylinder = new THREE.Mesh(cylinderGeo, material);
 
-	capsule.add(cylinder);
+    capsule.add(cylinder);
 
-	// pass in the cylinder itself, its desired axis, and the place to move the center
+    // pass in the cylinder itself, its desired axis, and the place to move the center
 
-	// Sphere geometry to cap the cylinder if openTop and/or openBottom is false
-	var sphereGeo = new THREE.SphereGeometry( radius[1], model.settings.poly, model.settings.poly );
-    if (!openBottom){
-		var sphereBottom = new THREE.Mesh(sphereGeo, material);
-		capsule.add(sphereBottom);
-		sphereBottom.translateY(-length / 2);
+    // Sphere geometry to cap the cylinder if openTop and/or openBottom is false
+    var sphereGeo = new THREE.SphereGeometry(radius[1], model.settings.poly, model.settings.poly);
+    if (!openBottom) {
+        var sphereBottom = new THREE.Mesh(sphereGeo, material);
+        capsule.add(sphereBottom);
+        sphereBottom.translateY(-length / 2);
     }
-    if (!openTop){
-		var sphereTop = new THREE.Mesh(sphereGeo, material);
-		capsule.add(sphereTop);
-		sphereTop.translateY(length / 2);
+    if (!openTop) {
+        var sphereTop = new THREE.Mesh(sphereGeo, material);
+        capsule.add(sphereTop);
+        sphereTop.translateY(length / 2);
     }
-	makeLengthAngleAxisTransform( capsule, cylAxis, center );
+    makeLengthAngleAxisTransform(capsule, cylAxis, center);
     model.scene.add(capsule);
-	return capsule;
+    return capsule;
 }
 
 // Transform cylinder to align with given axis and then move to center
@@ -55667,13 +55642,13 @@ function makeLengthAngleAxisTransform(cyl, cylAxis, center) {
 }
 
 function lineTo(x, y, z, openTop, openBottom) {
-	capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
+    capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
 }
 
 module.exports = {
-	line	: capsule,
-	lineTo	: lineTo,
-	capsule	: capsule
+    line: capsule,
+    lineTo: lineTo,
+    capsule: capsule
 };
 
 },{"../model":49,"three":27}],37:[function(require,module,exports){
@@ -55684,29 +55659,29 @@ module.exports = {
  */
 
 module.exports = {
-    animation 	: require('./animation'),
-    camera 		: require('./camera'),
-    color   	: require('./color'),
-    compounds  	: require('./compounds'),
-    keywords  	: require('./keywords.json'),
-    light	 	: require('./light'),
-    lines	 	: require('./lines'),
-    material	: require('./material'),
-    math	 	: require('./math'),
-    palette  	: require('./palette.json'),
-    primitives	: require('./primitives'),
-    space    	: require('./space'),
-    time     	: require('./time'),
-    turtle     	: require('./turtle')
+    animation: require('./animation'),
+    camera: require('./camera'),
+    color: require('./color'),
+    compounds: require('./compounds'),
+    keywords: require('./keywords.json'),
+    light: require('./light'),
+    lines: require('./lines'),
+    material: require('./material'),
+    math: require('./math'),
+    palette: require('./palette.json'),
+    primitives: require('./primitives'),
+    space: require('./space'),
+    time: require('./time'),
+    turtle: require('./turtle')
 };
 
 },{"./animation":33,"./camera":34,"./color":35,"./compounds":36,"./keywords.json":38,"./light":39,"./lines":40,"./material":41,"./math":42,"./palette.json":43,"./primitives":44,"./space":45,"./time":46,"./turtle":47}],38:[function(require,module,exports){
 module.exports={
-    "flat"					: "flat",
-    "frontsided"			: 0,
-    "backsided"				: 1,
-    "doublesided"			: 2,
-    "smooth"				: "smooth"
+    "flat": "flat",
+    "frontsided": 0,
+    "backsided": 1,
+    "doublesided": 2,
+    "smooth": "smooth"
 }
 
 },{}],39:[function(require,module,exports){
@@ -55717,21 +55692,21 @@ module.exports={
  */
 
 var model = require("../model"),
-	utils = require("./utils"),
-	THREE = require("three");
+    utils = require("./utils"),
+    THREE = require("three");
 
 /*
  * Adds an ambient light to the scene
  *
  */
 function ambient(color) {
-	color = utils.sanitizeColor(color);
+    color = utils.sanitizeColor(color);
 
-	color = color || model.settings.ambientLight;
-	model.settings.ambientLight = color;
-	model.elements.ambientLight = new THREE.AmbientLight(color);
-	model.scene.add(model.elements.ambientLight);
-	return model.elements.ambientLight;
+    color = color || model.settings.ambientLight;
+    model.settings.ambientLight = color;
+    model.elements.ambientLight = new THREE.AmbientLight(color);
+    model.scene.add(model.elements.ambientLight);
+    return model.elements.ambientLight;
 }
 
 /*
@@ -55741,10 +55716,10 @@ function ambient(color) {
  * @return void
  */
 function background(color) {
-	color = utils.parseColor(color);
+    color = utils.parseColor(color);
 
-	model.settings.bg = color;
-	model.renderer.setClearColor(color);
+    model.settings.bg = color;
+    model.renderer.setClearColor(color);
 }
 
 /*
@@ -55752,17 +55727,17 @@ function background(color) {
  *
  */
 function directional(color, position, intensity) {
-	color = utils.sanitizeColor(color);
+    color = utils.sanitizeColor(color);
 
-	position = position || [1, 1, 1];
-	color = color || '#FFF';
-	intensity = intensity || 1.0;
+    position = position || [1, 1, 1];
+    color = color || '#FFF';
+    intensity = intensity || 1.0;
 
-	var light = new THREE.DirectionalLight(color, intensity);
-	light.position.set(position[0], position[1], position[2]);
-	model.scene.add(light);
-	model.elements.lights.push(light);
-	return light;
+    var light = new THREE.DirectionalLight(color, intensity);
+    light.position.set(position[0], position[1], position[2]);
+    model.scene.add(light);
+    model.elements.lights.push(light);
+    return light;
 }
 
 /*
@@ -55770,14 +55745,14 @@ function directional(color, position, intensity) {
  *
  */
 function hemisphere(skyColor, groundColor, intensity) {
-	skyColor = utils.sanitizeColor(skyColor) || '#FFF';
-	groundColor = utils.sanitizeColor(groundColor) || '#FFF';
-	intensity = intensity || 1.0;
+    skyColor = utils.sanitizeColor(skyColor) || '#FFF';
+    groundColor = utils.sanitizeColor(groundColor) || '#FFF';
+    intensity = intensity || 1.0;
 
-	var light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-	model.scene.add(light);
-	model.elements.lights.push(light);
-	return light;
+    var light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+    model.scene.add(light);
+    model.elements.lights.push(light);
+    return light;
 }
 
 /*
@@ -55785,18 +55760,18 @@ function hemisphere(skyColor, groundColor, intensity) {
  *
  */
 function pointLight(color, position, intensity, distance, decay) {
-	color = utils.sanitizeColor(color);
+    color = utils.sanitizeColor(color);
 
-	position = position || [100, 100, 100];
-	intensity = intensity || 1;
-	distance = distance || 0;
-	decay = decay || 1;
+    position = position || [100, 100, 100];
+    intensity = intensity || 1;
+    distance = distance || 0;
+    decay = decay || 1;
 
-	var light = new THREE.PointLight(color, intensity, distance, decay);
-	light.position.set(position[0], position[1], position[2]);
-	model.scene.add(light);
-	model.elements.lights.push(light);
-	return light;
+    var light = new THREE.PointLight(color, intensity, distance, decay);
+    light.position.set(position[0], position[1], position[2]);
+    model.scene.add(light);
+    model.elements.lights.push(light);
+    return light;
 }
 
 /*
@@ -55804,36 +55779,37 @@ function pointLight(color, position, intensity, distance, decay) {
  *
  */
 function spot(color, position, intensity, angle, distance, exponent, decay) {
-	color = utils.sanitizeColor(color);
+    color = utils.sanitizeColor(color);
 
-	position = position || [100, 100, 100];
-	color = color || '#fff';
-	intensity = intensity || 1.0;
-	angle = angle * Math.PI / 180 || 10 * Math.PI / 180;
-	distance = distance || Infinity;
-	exponent = exponent || 250;
-	decay = decay || 1;
+    position = position || [100, 100, 100];
+    color = color || '#fff';
+    intensity = intensity || 1.0;
+    angle = angle * Math.PI / 180 || 10 * Math.PI / 180;
+    distance = distance || Infinity;
+    exponent = exponent || 250;
+    decay = decay || 1;
 
-	var light = new THREE.SpotLight(color, intensity, distance, angle, exponent, decay);
-	light.position.set(position[0], position[1], position[2]);
-	model.scene.add(light);
-	model.elements.lights.push(light);
-	return light;
+    var light = new THREE.SpotLight(color, intensity, distance, angle, exponent, decay);
+    light.position.set(position[0], position[1], position[2]);
+    model.scene.add(light);
+    model.elements.lights.push(light);
+    return light;
 }
 
 module.exports = {
-	ambient: ambient,
-	background: background,
-	directional: directional,
-	hemisphere: hemisphere,
-	pointLight: pointLight,
-	light: pointLight,
-	spot: spot
+    ambient: ambient,
+    background: background,
+    directional: directional,
+    hemisphere: hemisphere,
+    pointLight: pointLight,
+    light: pointLight,
+    spot: spot
 };
+
 },{"../model":49,"./utils":48,"three":27}],40:[function(require,module,exports){
 var compounds = require("./compounds"),
-	utils = require("./utils"),
-	model = require('../model');
+    utils = require("./utils"),
+    model = require('../model');
 
 /*
  * Set current model stroke color
@@ -55842,8 +55818,8 @@ var compounds = require("./compounds"),
  * @return void
  */
 function strokeColor(color) {
-	color = utils.parseColor(color);
-	model.settings.stroke.color = color;
+    color = utils.parseColor(color);
+    model.settings.stroke.color = color;
 }
 
 /*
@@ -55853,7 +55829,7 @@ function strokeColor(color) {
  * @return void
  */
 function strokeWidth(val) {
-	model.settings.stroke.width = val;
+    model.settings.stroke.width = val;
 }
 
 /*
@@ -55863,26 +55839,27 @@ function strokeWidth(val) {
  * @return void
  */
 function stroke() {
-	var style = utils.parseLineStyle(arguments);
-	if (style.color) {
-		strokeColor(style.color);
-	}
-	if (typeof style.width !== 'undefined') {
-		strokeWidth(style.width);
-	}
+    var style = utils.parseLineStyle(arguments);
+    if (style.color) {
+        strokeColor(style.color);
+    }
+    if (typeof style.width !== 'undefined') {
+        strokeWidth(style.width);
+    }
 }
 
 function lineTo(x, y, z, openTop, openBottom) {
-	compounds.capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
+    compounds.capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
 }
 
 module.exports = {
-	line: compounds.capsule,
-	lineTo: lineTo,
-	strokeColor: strokeColor,
-	strokeWidth: strokeWidth,
-	stroke: stroke
+    line: compounds.capsule,
+    lineTo: lineTo,
+    strokeColor: strokeColor,
+    strokeWidth: strokeWidth,
+    stroke: stroke
 };
+
 },{"../model":49,"./compounds":36,"./utils":48}],41:[function(require,module,exports){
 /*
  * Material language module
@@ -55891,7 +55868,7 @@ module.exports = {
  */
 
 var model = require('../model'),
-	THREE = require('three');
+    THREE = require('three');
 /*
  * Set current model poly count
  *
@@ -55899,7 +55876,7 @@ var model = require('../model'),
  * @return void
  */
 function poly(count) {
-	model.settings.poly = count;
+    model.settings.poly = count;
 }
 
 /*
@@ -55909,26 +55886,28 @@ function poly(count) {
  * @return void
  */
 function material(val) {
-	val = val || 'phong';
-	switch (val) {
-	case 'basic':
-		model.settings.material = THREE.MeshBasicMaterial;
-		break;
-	case 'depth':
-		model.settings.material = THREE.MeshDepthMaterial;
-		break;
-	case 'lambert':
-		model.settings.material = THREE.MeshLambertMaterial;
-		break;
-	case 'normal':
-		model.settings.material = THREE.MeshNormalMaterial;
-		break;
-	case 'phong':
-	default:
-		model.settings.material = THREE.MeshPhongMaterial;
-		break;
-	}
-	updateMaterial();
+    val = val || 'phong';
+    switch (val) {
+        case 'basic':
+            model.settings.material = THREE.MeshBasicMaterial;
+            break;
+        case 'depth':
+            model.settings.material = THREE.MeshDepthMaterial;
+            break;
+        case 'lambert':
+            model.settings.material = THREE.MeshLambertMaterial;
+            break;
+        case 'normal':
+            model.settings.material = THREE.MeshNormalMaterial;
+            break;
+        case 'phong':
+            model.settings.material = THREE.MeshPhongMaterial;
+            break;
+        default:
+            model.settings.material = THREE.MeshPhongMaterial;
+            break;
+    }
+    updateMaterial();
 }
 
 /*
@@ -55938,8 +55917,8 @@ function material(val) {
  * @return void
  */
 function shading(type) {
-	model.settings.shading = type || THREE.FlatShading;
-	updateMaterial();
+    model.settings.shading = type || THREE.FlatShading;
+    updateMaterial();
 }
 
 /*
@@ -55949,8 +55928,8 @@ function shading(type) {
  * @return void
  */
 function shininess(type) {
-	model.settings.shininess = type || 0;
-	updateMaterial();
+    model.settings.shininess = type || 0;
+    updateMaterial();
 }
 
 /*
@@ -55960,8 +55939,8 @@ function shininess(type) {
  * @return void
  */
 function sides(val) {
-	model.settings.sidedness = typeof val !== 'undefined' ? val : THREE.DoubleSided;
-	updateMaterial();
+    model.settings.sidedness = typeof val !== 'undefined' ? val : THREE.DoubleSided;
+    updateMaterial();
 }
 
 /*
@@ -55971,8 +55950,8 @@ function sides(val) {
  * @return void
  */
 function specular(val) {
-	model.settings.specular = typeof val !== 'undefined' ? val : 0x101010;
-	updateMaterial();
+    model.settings.specular = typeof val !== 'undefined' ? val : 0x101010;
+    updateMaterial();
 }
 
 /*
@@ -55981,31 +55960,32 @@ function specular(val) {
  * @return {Object}
  */
 function updateMaterial() {
-	var config = {
-		color: model.settings.color,
-		shading: model.settings.shading,
-		specular: model.settings.specular,
-		shininess: model.settings.shininess,
-		transparent: model.settings.opacity < 1,
-		opacity: model.settings.opacity,
-		side: model.settings.sidedness
-	};
-	model.elements.material = new model.settings.material(config);
+    var config = {
+        color: model.settings.color,
+        shading: model.settings.shading,
+        specular: model.settings.specular,
+        shininess: model.settings.shininess,
+        transparent: model.settings.opacity < 1,
+        opacity: model.settings.opacity,
+        side: model.settings.sidedness
+    };
+    model.elements.material = new model.settings.material(config);
 }
 
 module.exports = {
-	material: material,
-	poly: poly,
-	shading: shading,
-	shininess: shininess,
-	sides: sides,
-	specular: specular,
-	updateMaterial: updateMaterial
+    material: material,
+    poly: poly,
+    shading: shading,
+    shininess: shininess,
+    sides: sides,
+    specular: specular,
+    updateMaterial: updateMaterial
 };
+
 },{"../model":49,"three":27}],42:[function(require,module,exports){
 var math = Object.getOwnPropertyNames(Math);
 for (var key in math) {
-	module.exports[math[key]] = Math[math[key]];
+    module.exports[math[key]] = Math[math[key]];
 }
 
 /*
@@ -56017,21 +55997,22 @@ for (var key in math) {
  * @param {Boolena}* float
  * @return {Number}
  */
-module.exports.random = function (min, max, float) {
-	var out;
+module.exports.random = function(min, max, float) {
+    var out;
 
-	if (typeof min !== 'number' || typeof max !== 'number') {
-		return Math.random();
-	}
+    if (typeof min !== 'number' || typeof max !== 'number') {
+        return Math.random();
+    }
 
-	out = Math.random() * (max - min) + min;
+    out = Math.random() * (max - min) + min;
 
-	if (float) {
-		return out;
-	}
+    if (float) {
+        return out;
+    }
 
-	return Math.floor(out);
-}
+    return Math.floor(out);
+};
+
 },{}],43:[function(require,module,exports){
 module.exports={
     "aliceblue"            : "#F0F8FF",
@@ -56196,17 +56177,17 @@ module.exports={
  */
 
 var model = require('../model'),
-	THREE = require('three');
+    THREE = require('three');
 
 
 function makeMesh(geometry) {
-	material = model.elements.material;
-	var mesh = new THREE.Mesh(geometry, material);
-	mesh.position.x = model.cursor.x;
-	mesh.position.y = model.cursor.y;
-	mesh.position.z = model.cursor.z;
-	model.scene.add(mesh);
-	return mesh;
+    material = model.elements.material;
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.x = model.cursor.x;
+    mesh.position.y = model.cursor.y;
+    mesh.position.z = model.cursor.z;
+    model.scene.add(mesh);
+    return mesh;
 }
 
 /*
@@ -56221,15 +56202,15 @@ function makeMesh(geometry) {
  * TODO: more efficient positioning
  */
 function box(width, height, depth, widthSegments, heightSegments, depthSegments) {
-	width = typeof width !== 'undefined' ? width : 10;
-	height = typeof height !== 'undefined' ? height : width;
-	depth = typeof depth !== 'undefined' ? depth : width;
-	widthSegments = typeof widthSegments !== 'undefined' ? widthSegments : 1;
-	heightSegments = typeof widthSegments !== 'undefined' ? widthSegments : 1;
-	depthSegments = typeof depthSegments !== 'undefined' ? depthSegments : 1;
+    width = typeof width !== 'undefined' ? width : 10;
+    height = typeof height !== 'undefined' ? height : width;
+    depth = typeof depth !== 'undefined' ? depth : width;
+    widthSegments = typeof widthSegments !== 'undefined' ? widthSegments : 1;
+    heightSegments = typeof widthSegments !== 'undefined' ? widthSegments : 1;
+    depthSegments = typeof depthSegments !== 'undefined' ? depthSegments : 1;
 
-	var mesh = makeMesh(new THREE.BoxGeometry(width, height, depth));
-	return mesh;
+    var mesh = makeMesh(new THREE.BoxGeometry(width, height, depth));
+    return mesh;
 }
 
 /*
@@ -56244,31 +56225,31 @@ function box(width, height, depth, widthSegments, heightSegments, depthSegments)
  * TODO: more efficient positioning
  */
 function cylinder(radius, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength) {
-	radius = typeof radius !== 'undefined' ? radius : 5;
-	height = typeof height !== 'undefined' ? height : radius * 2	;
-	radiusSegments = typeof radiusSegments !== 'undefined' ? radiusSegments : model.settings.poly;
-	heightSegments = typeof heightSegments !== 'undefined' ? heightSegments : 1;
-	openEnded = typeof openEnded !== 'undefined' ? openEnded : false;
-	thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
-	thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI * 2;
+    radius = typeof radius !== 'undefined' ? radius : 5;
+    height = typeof height !== 'undefined' ? height : radius * 2;
+    radiusSegments = typeof radiusSegments !== 'undefined' ? radiusSegments : model.settings.poly;
+    heightSegments = typeof heightSegments !== 'undefined' ? heightSegments : 1;
+    openEnded = typeof openEnded !== 'undefined' ? openEnded : false;
+    thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
+    thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI * 2;
 
-	// Cylinders can have different radii for top and bottom parts. If initialised with a number, make it an object:
-	radius = typeof radius === 'number' ? {
-		top: radius,
-		bottom: radius
-	} : radius;
+    // Cylinders can have different radii for top and bottom parts. If initialised with a number, make it an object:
+    radius = typeof radius === 'number' ? {
+        top: radius,
+        bottom: radius
+    } : radius;
 
-	var mesh = makeMesh(new THREE.CylinderGeometry(radius.top, radius.bottom, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength));
-	return mesh;
+    var mesh = makeMesh(new THREE.CylinderGeometry(radius.top, radius.bottom, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength));
+    return mesh;
 }
-	/*
-	 * Draw a square using current cursor position as origin
-	 *
-	 * @param {Number} size
-	 * @return mesh
-	 */
+/*
+ * Draw a square using current cursor position as origin
+ *
+ * @param {Number} size
+ * @return mesh
+ */
 function cube(size) {
-	return box(size, size, size);
+    return box(size, size, size);
 }
 
 /*
@@ -56281,10 +56262,10 @@ function cube(size) {
  * TODO: more efficient positioning
  */
 function icosahedron(radius) {
-	radius = typeof radius !== 'undefined' ? radius : 10;
+    radius = typeof radius !== 'undefined' ? radius : 10;
 
-	var mesh = makeMesh(new THREE.IcosahedronGeometry(radius));
-	return mesh;
+    var mesh = makeMesh(new THREE.IcosahedronGeometry(radius));
+    return mesh;
 }
 
 /*
@@ -56297,11 +56278,11 @@ function icosahedron(radius) {
  * TODO: more efficient positioning
  */
 function dodecahedron(radius) {
-	radius = typeof radius !== 'undefined' ? radius : 10;
+    radius = typeof radius !== 'undefined' ? radius : 10;
 
-	var geometry = new THREE.DodecahedronGeometry(radius);
-	var mesh = makeMesh(geometry);
-	return mesh;
+    var geometry = new THREE.DodecahedronGeometry(radius);
+    var mesh = makeMesh(geometry);
+    return mesh;
 }
 
 /*
@@ -56314,10 +56295,10 @@ function dodecahedron(radius) {
  * TODO: more efficient positioning
  */
 function octahedron(radius) {
-	radius = typeof radius !== 'undefined' ? radius : 10;
+    radius = typeof radius !== 'undefined' ? radius : 10;
 
-	var mesh = makeMesh(new THREE.OctahedronGeometry(radius));
-	return mesh;
+    var mesh = makeMesh(new THREE.OctahedronGeometry(radius));
+    return mesh;
 }
 
 /*
@@ -56329,11 +56310,11 @@ function octahedron(radius) {
  *
  */
 function plane(width, height) {
-	width = typeof width !== 'undefined' ? width : 10;
-	height = typeof height !== 'undefined' ? height : width;
+    width = typeof width !== 'undefined' ? width : 10;
+    height = typeof height !== 'undefined' ? height : width;
 
-	var mesh = makeMesh(new THREE.PlaneGeometry(width, height));
-	return mesh;
+    var mesh = makeMesh(new THREE.PlaneGeometry(width, height));
+    return mesh;
 }
 
 /*
@@ -56352,15 +56333,15 @@ function plane(width, height) {
  * TODO: more efficient positioning
  */
 function ring(innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength) {
-	innerRadius = typeof innerRadius !== 'undefined' ? innerRadius : 10;
-	outerRadius = typeof outerRadius !== 'undefined' ? outerRadius : innerRadius + 5;
-	thetaSegments = typeof thetaSegments !== 'undefined' ? thetaSegments : model.settings.poly;
-	phiSegments = typeof phiSegments !== 'undefined' ? phiSegments : model.settings.poly;
-	thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
-	thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI * 2;
-	
-	var mesh = makeMesh(new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength));
-	return mesh;
+    innerRadius = typeof innerRadius !== 'undefined' ? innerRadius : 10;
+    outerRadius = typeof outerRadius !== 'undefined' ? outerRadius : innerRadius + 5;
+    thetaSegments = typeof thetaSegments !== 'undefined' ? thetaSegments : model.settings.poly;
+    phiSegments = typeof phiSegments !== 'undefined' ? phiSegments : model.settings.poly;
+    thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
+    thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI * 2;
+
+    var mesh = makeMesh(new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength));
+    return mesh;
 }
 
 /*
@@ -56379,16 +56360,16 @@ function ring(innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, 
  * TODO: more efficient positioning
  */
 function sphere(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength) {
-	radius = typeof radius !== 'undefined' ? radius : 10;
-	widthSegments = typeof widthSegments !== 'undefined' ? widthSegments : model.settings.poly;
-	heightSegments = typeof heightSegments !== 'undefined' ? heightSegments : model.settings.poly;
-	phiStart = typeof phiStart !== 'undefined' ? phiStart : 0;
-	phiLength = typeof phiLength !== 'undefined' ? phiLength : Math.PI * 2;
-	thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
-	thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI;
+    radius = typeof radius !== 'undefined' ? radius : 10;
+    widthSegments = typeof widthSegments !== 'undefined' ? widthSegments : model.settings.poly;
+    heightSegments = typeof heightSegments !== 'undefined' ? heightSegments : model.settings.poly;
+    phiStart = typeof phiStart !== 'undefined' ? phiStart : 0;
+    phiLength = typeof phiLength !== 'undefined' ? phiLength : Math.PI * 2;
+    thetaStart = typeof thetaStart !== 'undefined' ? thetaStart : 0;
+    thetaLength = typeof thetaLength !== 'undefined' ? thetaLength : Math.PI;
 
-	var mesh = makeMesh(new THREE.SphereGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength));
-	return mesh;
+    var mesh = makeMesh(new THREE.SphereGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength));
+    return mesh;
 }
 
 /*
@@ -56401,10 +56382,10 @@ function sphere(radius, widthSegments, heightSegments, phiStart, phiLength, thet
  * TODO: more efficient positioning
  */
 function tetrahedron(radius) {
-	radius = typeof radius !== 'undefined' ? radius : 10;
+    radius = typeof radius !== 'undefined' ? radius : 10;
 
-	var mesh = makeMesh(new THREE.TetrahedronGeometry(radius));
-	return mesh;
+    var mesh = makeMesh(new THREE.TetrahedronGeometry(radius));
+    return mesh;
 }
 
 /*
@@ -56421,14 +56402,14 @@ function tetrahedron(radius) {
  * TODO: more efficient positioning
  */
 function torus(radius, tube, radialSegments, tubularSegments, arc) {
-	radius = typeof radius !== 'undefined' ? radius : 5;
-	tube = typeof tube !== 'undefined' ? tube : 1;
-	radialSegments = typeof radialSegments !== 'undefined' ? radialSegments : model.settings.poly;
-	tubularSegments = typeof tubularSegments !== 'undefined' ? tubularSegments : model.settings.poly;
-	arc = typeof arc !== 'undefined' ? arc : Math.PI * 2;
+    radius = typeof radius !== 'undefined' ? radius : 5;
+    tube = typeof tube !== 'undefined' ? tube : 1;
+    radialSegments = typeof radialSegments !== 'undefined' ? radialSegments : model.settings.poly;
+    tubularSegments = typeof tubularSegments !== 'undefined' ? tubularSegments : model.settings.poly;
+    arc = typeof arc !== 'undefined' ? arc : Math.PI * 2;
 
-	var mesh = makeMesh(new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc));
-	return mesh;
+    var mesh = makeMesh(new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc));
+    return mesh;
 }
 
 /*
@@ -56447,33 +56428,33 @@ function torus(radius, tube, radialSegments, tubularSegments, arc) {
  * TODO: more efficient positioning
  */
 function torusKnot(radius, tubeRadius, p, q, radialSegments, tubularSegments, heightScale) {
-	radius = typeof radius !== 'undefined' ? radius : 5;
-	tubeRadius = typeof tubeRadius !== 'undefined' ? tubeRadius : 1;
-	p = typeof p !== 'undefined' ? p : 2;
-	q = typeof q !== 'undefined' ? q : 3;
-	radialSegments = typeof radialSegments !== 'undefined' ? radialSegments : model.settings.poly * 8;
-	tubularSegments = typeof tubularSegments !== 'undefined' ? tubularSegments : model.settings.poly * 1.5;
-	heightScale = typeof heightScale !== 'undefined' ? heightScale : 1;
+    radius = typeof radius !== 'undefined' ? radius : 5;
+    tubeRadius = typeof tubeRadius !== 'undefined' ? tubeRadius : 1;
+    p = typeof p !== 'undefined' ? p : 2;
+    q = typeof q !== 'undefined' ? q : 3;
+    radialSegments = typeof radialSegments !== 'undefined' ? radialSegments : model.settings.poly * 8;
+    tubularSegments = typeof tubularSegments !== 'undefined' ? tubularSegments : model.settings.poly * 1.5;
+    heightScale = typeof heightScale !== 'undefined' ? heightScale : 1;
 
-	var mesh = makeMesh(new THREE.TorusKnotGeometry(radius, tubeRadius, radialSegments, tubularSegments, p, q, heightScale));
-	return mesh;
+    var mesh = makeMesh(new THREE.TorusKnotGeometry(radius, tubeRadius, radialSegments, tubularSegments, p, q, heightScale));
+    return mesh;
 }
 
 module.exports = {
-	box: box,
-	cube: cube,
-	cylinder: cylinder,
-	dodecahedron: dodecahedron,
-	donut: torus,
-	ico: icosahedron,
-	icosahedron: icosahedron,
-	octahedron: octahedron,
-	plane: plane,
-	ring: ring,
-	sphere: sphere,
-	tetrahedron: tetrahedron,
-	torus: torus,
-	torusKnot: torusKnot
+    box: box,
+    cube: cube,
+    cylinder: cylinder,
+    dodecahedron: dodecahedron,
+    donut: torus,
+    ico: icosahedron,
+    icosahedron: icosahedron,
+    octahedron: octahedron,
+    plane: plane,
+    ring: ring,
+    sphere: sphere,
+    tetrahedron: tetrahedron,
+    torus: torus,
+    torusKnot: torusKnot
 };
 
 },{"../model":49,"three":27}],45:[function(require,module,exports){
@@ -56516,8 +56497,8 @@ function move(x, y, z) {
 }
 
 module.exports = {
-    moveTo : moveTo,
-    move   : move
+    moveTo: moveTo,
+    move: move
 };
 
 },{"../model":49}],46:[function(require,module,exports){
@@ -56527,198 +56508,199 @@ module.exports = {
  * Collection of time commands
  */
 
-module.exports["time"] = Date.now;
+module.exports.time = Date.now;
+
 },{}],47:[function(require,module,exports){
 var space = require('./space'),
-	compounds = require('./compounds'),
-	THREE = require('three');
+    compounds = require('./compounds'),
+    THREE = require('three');
 
 var Turtle = function Turtle(config) {
-	config = typeof config !== 'undefined' ? config : {};
-	this.x = typeof config.x !== 'undefined' ? config.x : 0;
-	this.y = typeof config.y !== 'undefined' ? config.y : 0;
-	this.z = typeof config.z !== 'undefined' ? config.z : 0;
-	this.d = typeof config.delta !== 'undefined' ? config.delta : 10;
-	this.theta = typeof config.theta !== 'undefined' ? config.theta : 90;
-	this.productions = typeof config.productions !== 'undefined' ? config.productions : {};
-	this.h = new THREE.Vector3(1, 0, 0);
-	this.l = new THREE.Vector3(0, 0, 1);
-	this.u = new THREE.Vector3(0, 1, 0);
-	this.stack = [];
+    config = typeof config !== 'undefined' ? config : {};
+    this.x = typeof config.x !== 'undefined' ? config.x : 0;
+    this.y = typeof config.y !== 'undefined' ? config.y : 0;
+    this.z = typeof config.z !== 'undefined' ? config.z : 0;
+    this.d = typeof config.delta !== 'undefined' ? config.delta : 10;
+    this.theta = typeof config.theta !== 'undefined' ? config.theta : 90;
+    this.productions = typeof config.productions !== 'undefined' ? config.productions : {};
+    this.h = new THREE.Vector3(1, 0, 0);
+    this.l = new THREE.Vector3(0, 0, 1);
+    this.u = new THREE.Vector3(0, 1, 0);
+    this.stack = [];
 };
 
 Turtle.prototype.instructions = {
-	'F': 'this.F()',
-	'f': 'this.f()',
-	'+': 'this.right()',
-	'-': 'this.left()',
-	'−': 'this.left()',
-	'^': 'this.up()',
-	'∧': 'this.up()',
-	'&': 'this.down()',
-	'/': 'this.rollRight()',
-	'\\': 'this.rollLeft()',
-	'|': 'this.turnAround()',
-	'[': 'this.push()',
-	']': 'this.pop()'
-}
-
-Turtle.prototype.translate = function (axiom) {
-	for (var i = 0; i < axiom.length; i++) {
-		var token = axiom[i];
-		eval(this.instructions[token]);
-	}
+    'F': 'this.F()',
+    'f': 'this.f()',
+    '+': 'this.right()',
+    '-': 'this.left()',
+    '−': 'this.left()',
+    '^': 'this.up()',
+    '∧': 'this.up()',
+    '&': 'this.down()',
+    '/': 'this.rollRight()',
+    '\\': 'this.rollLeft()',
+    '|': 'this.turnAround()',
+    '[': 'this.push()',
+    ']': 'this.pop()'
 };
 
-Turtle.prototype.generate = function (axiom, generations) {
-	if (generations > 0) {
-		successor = '';
-		for (var i = 0; i < axiom.length; i++) {
-			var token = axiom[i]; // Select a single character out of the axiom for matching against the production list
-			if (this.productions[token]) { // check if the token is in the production list
-				if (typeof this.productions[token] === 'object') { // check if this production is stochastic
-					// check to see the probabilities total
-					var probabilityTotal = 0;
-					var probabilities = [];
-					for (var j = 1; j <= Object.keys(this.productions[token]).length; j++) { // iterate through possible productions
-						probabilityTotal += parseFloat(this.productions[token][j]['probability']); // add their probabilities up
-						probabilities.push(probabilityTotal); // and store each step in a value for comparison later
-					}
-					var randomNum = Math.random() * probabilityTotal;
-					for (var k = 0; k < probabilities.length; k++) {// Iterate over probabilities.
-						if (randomNum < probabilities[k]) { // If `randomNum` is greater than the given probability, it is a match!
-							successor += this.productions[token][k + 1]['word']; // add the randomly selected production word
-						}
-					}
-				} else { // If the production is determanistic, add the match to the successor
-					successor += this.productions[token];
-				}
-			} else { // if the token is not in the production list, just put it back in with no modification
-				successor += token;
-			}
-		}
-		return this.generate(successor, --generations);
-	}
-	return axiom;
+Turtle.prototype.translate = function(axiom) {
+    for (var i = 0; i < axiom.length; i++) {
+        var token = axiom[i];
+        eval(this.instructions[token]);
+    }
 };
 
-Turtle.prototype.F = function (d) {
-	d = d || this.d;
-	var prime = this.h.clone().multiplyScalar(d);
-	space.moveTo(this.x, this.y, this.z);
-	compounds.line(prime.x, prime.y, +prime.z);
-	space.move(prime.x, prime.y, +prime.z);
-	this.x += prime.x;
-	this.y += prime.y;
-	this.z += prime.z;
+Turtle.prototype.generate = function(axiom, generations) {
+    if (generations > 0) {
+        successor = '';
+        for (var i = 0; i < axiom.length; i++) {
+            var token = axiom[i]; // Select a single character out of the axiom for matching against the production list
+            if (this.productions[token]) { // check if the token is in the production list
+                if (typeof this.productions[token] === 'object') { // check if this production is stochastic
+                    // check to see the probabilities total
+                    var probabilityTotal = 0;
+                    var probabilities = [];
+                    for (var j = 1; j <= Object.keys(this.productions[token]).length; j++) { // iterate through possible productions
+                        probabilityTotal += parseFloat(this.productions[token][j].probability); // add their probabilities up
+                        probabilities.push(probabilityTotal); // and store each step in a value for comparison later
+                    }
+                    var randomNum = Math.random() * probabilityTotal;
+                    for (var k = 0; k < probabilities.length; k++) { // Iterate over probabilities.
+                        if (randomNum < probabilities[k]) { // If `randomNum` is greater than the given probability, it is a match!
+                            successor += this.productions[token][k + 1].word; // add the randomly selected production word
+                        }
+                    }
+                } else { // If the production is determanistic, add the match to the successor
+                    successor += this.productions[token];
+                }
+            } else { // if the token is not in the production list, just put it back in with no modification
+                successor += token;
+            }
+        }
+        return this.generate(successor, --generations);
+    }
+    return axiom;
 };
 
-Turtle.prototype.f = function (d) {
-	d = d || this.d;
-	var prime = this.h.clone().multiplyScalar(d);
-	this.x += prime.x;
-	this.y += prime.y;
-	this.z += prime.z;
-	space.moveTo(this.x, this.y, this.z);
+Turtle.prototype.F = function(d) {
+    d = d || this.d;
+    var prime = this.h.clone().multiplyScalar(d);
+    space.moveTo(this.x, this.y, this.z);
+    compounds.line(prime.x, prime.y, +prime.z);
+    space.move(prime.x, prime.y, +prime.z);
+    this.x += prime.x;
+    this.y += prime.y;
+    this.z += prime.z;
 };
 
-Turtle.prototype.yaw = function (angle) {
-	angle = angle / 180 * Math.PI;
-	this.h.applyAxisAngle(this.u, angle);
-	this.l.applyAxisAngle(this.u, angle);
-	this.u.applyAxisAngle(this.u, angle);
+Turtle.prototype.f = function(d) {
+    d = d || this.d;
+    var prime = this.h.clone().multiplyScalar(d);
+    this.x += prime.x;
+    this.y += prime.y;
+    this.z += prime.z;
+    space.moveTo(this.x, this.y, this.z);
 };
 
-Turtle.prototype.pitch = function (angle) {
-	angle = angle / 180 * Math.PI;
-	this.h.applyAxisAngle(this.l, angle);
-	this.l.applyAxisAngle(this.l, angle);
-	this.u.applyAxisAngle(this.l, angle);
+Turtle.prototype.yaw = function(angle) {
+    angle = angle / 180 * Math.PI;
+    this.h.applyAxisAngle(this.u, angle);
+    this.l.applyAxisAngle(this.u, angle);
+    this.u.applyAxisAngle(this.u, angle);
 };
 
-Turtle.prototype.roll = function (angle) {
-	angle = angle / 180 * Math.PI;
-	this.h.applyAxisAngle(this.h, angle);
-	this.l.applyAxisAngle(this.h, angle);
-	this.u.applyAxisAngle(this.h, angle);
+Turtle.prototype.pitch = function(angle) {
+    angle = angle / 180 * Math.PI;
+    this.h.applyAxisAngle(this.l, angle);
+    this.l.applyAxisAngle(this.l, angle);
+    this.u.applyAxisAngle(this.l, angle);
 };
 
-Turtle.prototype.right = function (angle) {
-	angle = angle || this.theta;
-	this.yaw(-angle);
+Turtle.prototype.roll = function(angle) {
+    angle = angle / 180 * Math.PI;
+    this.h.applyAxisAngle(this.h, angle);
+    this.l.applyAxisAngle(this.h, angle);
+    this.u.applyAxisAngle(this.h, angle);
 };
 
-Turtle.prototype.left = function (angle) {
-	angle = angle || this.theta;
-	this.yaw(angle);
+Turtle.prototype.right = function(angle) {
+    angle = angle || this.theta;
+    this.yaw(-angle);
 };
 
-Turtle.prototype.up = function (angle) {
-	angle = angle || this.theta;
-	this.pitch(angle);
+Turtle.prototype.left = function(angle) {
+    angle = angle || this.theta;
+    this.yaw(angle);
 };
 
-Turtle.prototype.down = function (angle) {
-	angle = angle || this.theta;
-	this.pitch(-angle);
+Turtle.prototype.up = function(angle) {
+    angle = angle || this.theta;
+    this.pitch(angle);
 };
 
-Turtle.prototype.rollRight = function (angle) {
-	angle = angle || this.theta;
-	this.roll(angle);
+Turtle.prototype.down = function(angle) {
+    angle = angle || this.theta;
+    this.pitch(-angle);
 };
 
-Turtle.prototype.rollLeft = function (angle) {
-	angle = angle || this.theta;
-	this.roll(-angle);
+Turtle.prototype.rollRight = function(angle) {
+    angle = angle || this.theta;
+    this.roll(angle);
 };
 
-Turtle.prototype.turnAround = function () {
-	this.yaw(180);
+Turtle.prototype.rollLeft = function(angle) {
+    angle = angle || this.theta;
+    this.roll(-angle);
 };
 
-Turtle.prototype.goTo = function (x, y, z) {
-	this.x = typeof x !== 'undefined' ? x : 0;
-	this.y = typeof x !== 'undefined' ? y : 0;
-	this.z = typeof x !== 'undefined' ? z : 0;;
+Turtle.prototype.turnAround = function() {
+    this.yaw(180);
 };
 
-Turtle.prototype.incrementColorIndex = function () {
-	++this.colorIndex;
+Turtle.prototype.goTo = function(x, y, z) {
+    this.x = typeof x !== 'undefined' ? x : 0;
+    this.y = typeof x !== 'undefined' ? y : 0;
+    this.z = typeof x !== 'undefined' ? z : 0;
 };
 
-Turtle.prototype.decrementDiameter = function () {
-	--this.diameter;
+Turtle.prototype.incrementColorIndex = function() {
+    ++this.colorIndex;
 };
 
-Turtle.prototype.push = function () {
-	var state = {
-		x: this.x,
-		y: this.y,
-		z: this.z,
-		h: this.h.clone(),
-		l: this.l.clone(),
-		u: this.u.clone(),
-		diameter: this.diameter,
-		colorIndex: this.colorIndex
-	};
-	this.stack.push(state);
+Turtle.prototype.decrementDiameter = function() {
+    --this.diameter;
 };
 
-Turtle.prototype.pop = function () {
-	var state = this.stack.pop();
-	this.x = state.x;
-	this.y = state.y;
-	this.z = state.z;
-	this.h = state.h;
-	this.l = state.l;
-	this.u = state.u;
-	this.diameter = state.diameter;
-	this.colorIndex = state.colorIndex;
+Turtle.prototype.push = function() {
+    var state = {
+        x: this.x,
+        y: this.y,
+        z: this.z,
+        h: this.h.clone(),
+        l: this.l.clone(),
+        u: this.u.clone(),
+        diameter: this.diameter,
+        colorIndex: this.colorIndex
+    };
+    this.stack.push(state);
+};
+
+Turtle.prototype.pop = function() {
+    var state = this.stack.pop();
+    this.x = state.x;
+    this.y = state.y;
+    this.z = state.z;
+    this.h = state.h;
+    this.l = state.l;
+    this.u = state.u;
+    this.diameter = state.diameter;
+    this.colorIndex = state.colorIndex;
 };
 
 module.exports = {
-	Turtle: Turtle
+    Turtle: Turtle
 };
 
 },{"./compounds":36,"./space":45,"three":27}],48:[function(require,module,exports){
@@ -56739,7 +56721,7 @@ function parseLineStyle(attributes) {
     var out = {},
         i, attr;
 
-    for (i = 0 ; i < attributes.length; i += 1) {
+    for (i = 0; i < attributes.length; i += 1) {
         attr = attributes[i];
 
         if (typeof attr === 'number') {
@@ -56769,10 +56751,10 @@ function parseColor(val) {
  * @return {*}
  */
 function sanitizeColor(val) {
-	if (val === true || val === undefined) {
-		val = '#FFF';
-	} else if (val === false) {
-		val = '#000';
+    if (val === true || val === undefined) {
+        val = '#FFF';
+    } else if (val === false) {
+        val = '#000';
     }
     return val;
 }
@@ -56784,7 +56766,8 @@ function sanitizeColor(val) {
  * @return {Boolean}
  */
 function isColorValue(val) {
-    if (typeof val !== 'string') { return false; }
+    if (typeof val !== 'string') {
+        return false; }
 
     if (val.substr(0, 1) === '#' && val.length > 3 && val.length <= 7) {
         return true;
@@ -56796,10 +56779,10 @@ function isColorValue(val) {
 }
 
 module.exports = {
-    parseColor       : parseColor,
-    parseLineStyle   : parseLineStyle,
-    isColorValue     : isColorValue,
-    sanitizeColor    : sanitizeColor
+    parseColor: parseColor,
+    parseLineStyle: parseLineStyle,
+    isColorValue: isColorValue,
+    sanitizeColor: sanitizeColor
 };
 
 },{"./palette.json":43}],49:[function(require,module,exports){

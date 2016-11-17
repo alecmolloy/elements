@@ -1,6 +1,6 @@
 var math = Object.getOwnPropertyNames(Math);
 for (var key in math) {
-	module.exports[math[key]] = Math[math[key]];
+    module.exports[math[key]] = Math[math[key]];
 }
 
 /*
@@ -12,18 +12,18 @@ for (var key in math) {
  * @param {Boolena}* float
  * @return {Number}
  */
-module.exports.random = function (min, max, float) {
-	var out;
+module.exports.random = function(min, max, float) {
+    var out;
 
-	if (typeof min !== 'number' || typeof max !== 'number') {
-		return Math.random();
-	}
+    if (typeof min !== 'number' || typeof max !== 'number') {
+        return Math.random();
+    }
 
-	out = Math.random() * (max - min) + min;
+    out = Math.random() * (max - min) + min;
 
-	if (float) {
-		return out;
-	}
+    if (float) {
+        return out;
+    }
 
-	return Math.floor(out);
-}
+    return Math.floor(out);
+};

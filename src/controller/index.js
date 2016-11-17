@@ -1,6 +1,6 @@
 module.exports = {
-	display: require("./display"),
-	editor: require("./editor"),
-	interpreter: require("./interpreter"),
-	scene: require("./scene")
-}
+    display: require("./display"),
+    editor: require("./editor"),
+    interpreter: require("./interpreter"),
+    scene: require("./scene")
+};

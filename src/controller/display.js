@@ -55,7 +55,7 @@ var toggleFullscreenDisplay = function() {
         // window.removeEventListener("keyup", escToggle);
     }
     resize();
-}
+};
 
 module.exports = {
     init: init,

@@ -37,6 +37,6 @@ function move(x, y, z) {
 }
 
 module.exports = {
-    moveTo : moveTo,
-    move   : move
+    moveTo: moveTo,
+    move: move
 };

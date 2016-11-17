@@ -5,9 +5,9 @@
  */
 
 var Color = require("color"),
-	model = require("../model"),
-	utils = require("./utils"),
-	material = require("./material");
+    model = require("../model"),
+    utils = require("./utils"),
+    material = require("./material");
 
 /*
  * Set current model color
@@ -16,9 +16,9 @@ var Color = require("color"),
  * @return void
  */
 function color(val) {
-	val = utils.parseColor(val);
-	model.settings.color = val || 'transparent';
-	material.updateMaterial();
+    val = utils.parseColor(val);
+    model.settings.color = val || 'transparent';
+    material.updateMaterial();
 }
 
 /*
@@ -28,7 +28,7 @@ function color(val) {
  * @return {Boolean}
  */
 function dark(color) {
-	return Color(color).dark();
+    return Color(color).dark();
 }
 
 /*
@@ -38,7 +38,7 @@ function dark(color) {
  * @return {Boolean}
  */
 function light(color) {
-	return Color(color).light();
+    return Color(color).light();
 }
 
 /*
@@ -49,7 +49,7 @@ function light(color) {
  * @return {String}
  */
 function darken(color, amount) {
-	return brightness(color, brightness(color) - amount);
+    return brightness(color, brightness(color) - amount);
 }
 
 /*
@@ -60,7 +60,7 @@ function darken(color, amount) {
  * @return {String}
  */
 function lighten(color, amount) {
-	return brightness(color, brightness(color) + amount);
+    return brightness(color, brightness(color) + amount);
 }
 
 /*
@@ -71,7 +71,7 @@ function lighten(color, amount) {
  * @return {String|Number}
  */
 function brightness(color, amount) {
-	return getOrSet('hsl', 2, color, amount);
+    return getOrSet('hsl', 2, color, amount);
 }
 
 /*
@@ -82,7 +82,7 @@ function brightness(color, amount) {
  */
 
 function setBrightness(color, amount) {
-	return brightness(color, brightness(color) + amount / 2);
+    return brightness(color, brightness(color) + amount / 2);
 }
 
 /*
@@ -93,7 +93,7 @@ function setBrightness(color, amount) {
  * @return {String}
  */
 function saturate(color, amount) {
-	return saturation(color, saturation(color) + amount);
+    return saturation(color, saturation(color) + amount);
 }
 
 /*
@@ -104,7 +104,7 @@ function saturate(color, amount) {
  */
 
 function setSaturation(color, amount) {
-	return saturation(color, saturation(color) + amount);
+    return saturation(color, saturation(color) + amount);
 }
 
 /*
@@ -115,7 +115,7 @@ function setSaturation(color, amount) {
  * @return {String}
  */
 function desaturate(color, amount) {
-	return saturation(color, saturation(color) - amount);
+    return saturation(color, saturation(color) - amount);
 }
 
 /*
@@ -126,7 +126,7 @@ function desaturate(color, amount) {
  * @return {String|Number}
  */
 function saturation(color, amount) {
-	return getOrSet('hsl', 1, color, amount);
+    return getOrSet('hsl', 1, color, amount);
 }
 
 /*
@@ -137,7 +137,7 @@ function saturation(color, amount) {
  * @return {String|Number}
  */
 function hue(color, amount) {
-	return getOrSet('hsl', 0, color, amount);
+    return getOrSet('hsl', 0, color, amount);
 }
 
 /*
@@ -148,7 +148,7 @@ function hue(color, amount) {
  * @return {String}
  */
 function rotate(color, amount) {
-	return Color(color).rotate(amount).rgbaString();
+    return Color(color).rotate(amount).rgbaString();
 }
 
 /*
@@ -160,7 +160,7 @@ function rotate(color, amount) {
  * @return {String}
  */
 function rgb(red, green, blue) {
-	return "rgb(" + red + ", " + green + ", " + blue + ")";
+    return "rgb(" + red + ", " + green + ", " + blue + ")";
 }
 
 /*
@@ -173,7 +173,7 @@ function rgb(red, green, blue) {
  * @return {String}
  */
 function rgba(red, green, blue, alpha) {
-	return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
+    return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
 }
 
 /*
@@ -183,8 +183,8 @@ function rgba(red, green, blue, alpha) {
  * @return void
  */
 function opacity(val) {
-	model.settings.opacity = val || 1;
-	material.updateMaterial();
+    model.settings.opacity = val || 1;
+    material.updateMaterial();
 }
 
 /*
@@ -196,8 +196,8 @@ function opacity(val) {
  * @return {String}
  */
 function mix(a, b, amount) {
-	amount = amount || 50;
-	return Color(a).mix(Color(b), amount / 100).rgbaString();
+    amount = amount || 50;
+    return Color(a).mix(Color(b), amount / 100).rgbaString();
 }
 
 /*
@@ -210,39 +210,39 @@ function mix(a, b, amount) {
  * @return {String|Number}
  */
 function getOrSet(mode, key, color, amount) {
-	color = Color(color);
+    color = Color(color);
 
-	if (typeof amount === 'undefined') {
-		return mode ? color.values[mode][key] : color.values[key];
-	}
+    if (typeof amount === 'undefined') {
+        return mode ? color.values[mode][key] : color.values[key];
+    }
 
-	if (key === 'alpha') {
-		return color.alpha(amount).rgbaString();
-	}
+    if (key === 'alpha') {
+        return color.alpha(amount).rgbaString();
+    }
 
-	var values = color.values[mode];
+    var values = color.values[mode];
 
-	values[key] = amount;
+    values[key] = amount;
 
-	return Color().hsl(values).rgbaString();
+    return Color().hsl(values).rgbaString();
 }
 
 module.exports = {
-	color: color,
-	dark: dark,
-	light: light,
-	lighten: lighten,
-	darken: darken,
-	brightness: brightness,
-	mix: mix,
-	saturation: saturation,
-	saturate: saturate,
-	desaturate: desaturate,
-	hue: hue,
-	rotate: rotate,
-	rgb: rgb,
-	rgba: rgba,
-	opacity: opacity,
-	setBrightness: setBrightness,
-	setSaturation: setSaturation
+    color: color,
+    dark: dark,
+    light: light,
+    lighten: lighten,
+    darken: darken,
+    brightness: brightness,
+    mix: mix,
+    saturation: saturation,
+    saturate: saturate,
+    desaturate: desaturate,
+    hue: hue,
+    rotate: rotate,
+    rgb: rgb,
+    rgba: rgba,
+    opacity: opacity,
+    setBrightness: setBrightness,
+    setSaturation: setSaturation
 };

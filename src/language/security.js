@@ -43,6 +43,6 @@ var OVERRIDES = [
 module.exports = {};
 
 // Build exports object
-OVERRIDES.forEach(function (key) {
-//    module.exports[key] = null;
+OVERRIDES.forEach(function(key) {
+    //    module.exports[key] = null;
 });

@@ -16,13 +16,13 @@ var model = require('../model');
 
 function animate(callback, fps) {
     setTimeout(function() {
-		model.animationRequestID = window.requestAnimationFrame(function (timestamp) {
-			callback(timestamp);
+        model.animationRequestID = window.requestAnimationFrame(function(timestamp) {
+            callback(timestamp);
             animate(callback, fps);
-		});
+        });
     }, 1000 / fps);
 }
 
 module.exports = {
-    animate     : animate
+    animate: animate
 };
