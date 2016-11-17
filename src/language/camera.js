@@ -28,8 +28,8 @@ function camera(x, y, z) {
 
 function cameraTarget(x, y, z) {
     x = typeof x !== 'undefined' ? x : 0;
-    y = typeof y !== 'undefined' ? y : x;
-    z = typeof z !== 'undefined' ? z : x;
+    y = typeof y !== 'undefined' ? y : 0;
+    z = typeof z !== 'undefined' ? z : 0;
     model.cameraControls.target.set(x, y, z);
 }
 
