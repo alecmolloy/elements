@@ -17,6 +17,44 @@ var setCode = function(value) {
     aceEditor.setValue(value);
 };
 
+window.addEventListener(
+    "dragover",
+    function handleDragOver(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        document.getElementById("editor").classList.add("dragOver");
+    },
+    false
+);
+
+window.addEventListener(
+    "dragleave",
+    function handleDragOver(e) {
+        document.getElementById("editor").classList.remove("dragOver");
+    },
+    false
+);
+
+window.addEventListener(
+    "drop",
+    function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var file = e.dataTransfer.files[0];
+        document.getElementById("editor").classList.remove("dragOver");
+        var reader = new FileReader();
+        reader.onload = (function(theFile) {
+            return function(e) {
+                if (e.target) {
+                    setCode(e.target.result);
+                }
+            };
+        })(file);
+        reader.readAsText(file);
+    },
+    false
+);
 
 var aceEditor = ace.edit("editor");
 aceEditor.setTheme("ace/theme/tomorrow_night_eighties");

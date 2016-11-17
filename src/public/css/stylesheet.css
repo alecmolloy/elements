@@ -4,7 +4,7 @@
     right: 0;
     bottom: 0;
     left: 0;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 #display {
@@ -45,6 +45,14 @@
     box-sizing: padding-box;
 }
 
-.coordinate-box {
+#display .coordinate-box {
     padding: .25em;
+}
+
+#editor {
+    transition: opacity .25s;
+}
+
+#editor.dragOver {
+    opacity: 0.95;
 }
