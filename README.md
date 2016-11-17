@@ -5,9 +5,14 @@ A three-dee making tool with simple commands and powerups for everyone. Built wi
 Try playing with this code:
 
 ```
-ambientLight low
-directionalLight on
-bobbing icosahedron 5
+light on
+hemisphere medium, low
+for x in [-5 .. 5]
+    for y in [-5 .. 5]
+        for z in [-5 .. 5]
+            moveTo x, y, z
+            color rotate red, z * 20
+            cube .5
 ```
 
 ## Setup
@@ -15,6 +20,7 @@ bobbing icosahedron 5
     git clone git@github.com:alecmolloy/elements.git
     cd elements
     npm install
+    npm run build
 
 ## Run the app with:
 
