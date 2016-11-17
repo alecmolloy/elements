@@ -4,4 +4,4 @@
  * Collection of time commands
  */
 
-module.exports["time"] = Date.now;
+module.exports.time = Date.now;

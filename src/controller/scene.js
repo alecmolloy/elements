@@ -39,17 +39,10 @@ function resetModel() {
         z: 0
     };
 
-
     material.updateMaterial();
-
     model.scene = new THREE.Scene();
-    model.clock = new THREE.Clock();
-
     model.cameras = {};
     model.cameras.main = new THREE.PerspectiveCamera(30, 1, 1, 1000000);
-    // model.cameras.x = {}; TODO
-    // model.cameras.y = {};
-    // model.cameras.z = {};
     model.cameras.main.position.copy(model.settings.cameraPosition);
 
     model.cameraControls = new OrbitControls(model.cameras.main, model.renderer.domElement);
@@ -60,8 +53,6 @@ function resetModel() {
  * Render loop
  */
 function render() {
-    var delta = model.clock.getDelta();
-    model.cameraControls.update(delta);
     model.renderer.render(model.scene, model.cameras.main);
     if (model.animationID) {
         window.cancelAnimationFrame(model.animationID);

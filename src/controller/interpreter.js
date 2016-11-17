@@ -9,7 +9,8 @@ var coffee = require("coffee-script"),
     THREE = require("three"),
     scene = require("./scene"),
     model = require("../model"),
-    modules = require("../language")
+    modules = require("../language"),
+    languageBlock,
     ERROR_LOC_REGEX = /\s+at Object\.eval \((.+):(\d+):(\d+)\)/;
 
 /*
@@ -21,12 +22,9 @@ var coffee = require("coffee-script"),
  * @return {Object|void}
  */
 function run(code) {
-    display.init();
     scene.resetModel();
 
     var compiled;
-    code = preCompile(code || '');
-
     // Attempt compiling coffeescript
     try {
         compiled = coffee.compile(code || '', {
@@ -52,25 +50,7 @@ function run(code) {
             type: 'execution'
         };
     }
-}
-
-/*
- * Precompile step - Cleans the code up
- *
- * @param {String} code
- * @return {String}
- */
-function preCompile(code) {
-    "use strict";
-    code = code
-        // Only use fat arrow (Block access to Window through `this`)
-        .replace(/->/g, '=>')
-        // Allow thin arrow on constructor functions
-        .replace(/(constructor\s*\:[^\=]*)=>/g, function(match, start) {
-            return start + '->';
-        });
-
-    return code;
+    scene.render();
 }
 
 /*
@@ -129,7 +109,6 @@ function evalInContext(code) {
         }
     }
     eval(code);
-    scene.render();
 }
 
 module.exports = {

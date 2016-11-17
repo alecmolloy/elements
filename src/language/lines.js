@@ -1,6 +1,6 @@
 var compounds = require("./compounds"),
-	utils = require("./utils"),
-	model = require('../model');
+    utils = require("./utils"),
+    model = require('../model');
 
 /*
  * Set current model stroke color
@@ -9,8 +9,8 @@ var compounds = require("./compounds"),
  * @return void
  */
 function strokeColor(color) {
-	color = utils.parseColor(color);
-	model.settings.stroke.color = color;
+    color = utils.parseColor(color);
+    model.settings.stroke.color = color;
 }
 
 /*
@@ -20,7 +20,7 @@ function strokeColor(color) {
  * @return void
  */
 function strokeWidth(val) {
-	model.settings.stroke.width = val;
+    model.settings.stroke.width = val;
 }
 
 /*
@@ -30,23 +30,23 @@ function strokeWidth(val) {
  * @return void
  */
 function stroke() {
-	var style = utils.parseLineStyle(arguments);
-	if (style.color) {
-		strokeColor(style.color);
-	}
-	if (typeof style.width !== 'undefined') {
-		strokeWidth(style.width);
-	}
+    var style = utils.parseLineStyle(arguments);
+    if (style.color) {
+        strokeColor(style.color);
+    }
+    if (typeof style.width !== 'undefined') {
+        strokeWidth(style.width);
+    }
 }
 
 function lineTo(x, y, z, openTop, openBottom) {
-	compounds.capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
+    compounds.capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
 }
 
 module.exports = {
-	line: compounds.capsule,
-	lineTo: lineTo,
-	strokeColor: strokeColor,
-	strokeWidth: strokeWidth,
-	stroke: stroke
+    line: compounds.capsule,
+    lineTo: lineTo,
+    strokeColor: strokeColor,
+    strokeWidth: strokeWidth,
+    stroke: stroke
 };
