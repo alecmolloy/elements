@@ -1,4 +1,5 @@
-var interpreter = require("./interpreter");
+var display = require("./display"),
+    interpreter = require("./interpreter");
 
 var aceEditor = ace.edit("editor");
 aceEditor.setTheme("ace/theme/tomorrow_night_eighties");
@@ -7,25 +8,26 @@ aceEditor.getSession().setMode("ace/mode/coffee");
 aceEditor.setBehavioursEnabled(false);
 aceEditor.focus();
 
-aceEditor.on("change", function (e) {
-	console.log(interpreter.run(aceEditor.getValue()));
+aceEditor.on("change", function(e) {
+    console.log(interpreter.run(aceEditor.getValue()));
 });
 
-var setCode = function (value) {
-	aceEditor.setValue(value);
+var setCode = function(value) {
+    aceEditor.setValue(value);
 };
 
-var resetCode = function () {
-	aceEditor.setValue("");
+var resetCode = function() {
+    aceEditor.setValue("");
 };
 
-var loadCode = function () {
-	// to implement
-}
+var loadCode = function() {
+    // to implement
+};
+display.init();
 interpreter.run(aceEditor.getValue());
 
 module.exports = {
-	loadCode: loadCode,
-	resetCode: resetCode,
-	setCode: setCode
+    loadCode: loadCode,
+    resetCode: resetCode,
+    setCode: setCode
 };
