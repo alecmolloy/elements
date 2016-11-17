@@ -39,6 +39,8 @@ function resetModel() {
         z: 0
     };
 
+    model.clock = new THREE.Clock();
+
     material.updateMaterial();
     model.scene = new THREE.Scene();
     model.cameras = {};
@@ -54,6 +56,9 @@ function resetModel() {
  * Render loop
  */
 function render() {
+    var delta = model.clock.getDelta();
+    model.cameraControls.update(delta);
+
     model.renderer.render(model.scene, model.cameras.main);
     if (model.animationID) {
         window.cancelAnimationFrame(model.animationID);
