@@ -1,5 +1,4 @@
-var compounds = require("./compounds"),
-    utils = require("./utils"),
+var utils = require("./utils"),
     model = require("../model"),
     THREE = require("three");
 

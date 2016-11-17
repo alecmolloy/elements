@@ -56,6 +56,7 @@ var toggleFullscreenDisplay = function() {
 };
 
 module.exports = {
+    escToggle: escToggle,
     init: init,
     resize: resize,
     toggleFullscreenDisplay: toggleFullscreenDisplay
