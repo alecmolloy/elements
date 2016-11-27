@@ -1,3 +1,7 @@
+body {
+    background-color: #2D2D2D;
+}
+
 #editor {
     position: absolute;
     top: 0;
@@ -22,7 +26,16 @@
     display: block;
     background-color: #eee;
     background-image: linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(-45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
-    background-size: 10px 10px;
+    background-size: 20px 20px;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+}
+
+#display #canvas:active {
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
 }
 
 #display.fullscreen #canvas {
@@ -55,4 +68,10 @@
 
 #editor.dragOver {
     opacity: 0.95;
+}
+
+@media (max-width: 1400px) {
+    #editor {
+        font-size: 14px;
+    }
 }
