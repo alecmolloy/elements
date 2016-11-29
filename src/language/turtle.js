@@ -14,29 +14,21 @@ var Turtle = function Turtle(config) {
     this.l = new THREE.Vector3(0, 0, 1);
     this.u = new THREE.Vector3(0, 1, 0);
     this.stack = [];
-};
-
-Turtle.prototype.instructions = {
-    'F': 'this.F()',
-    'f': 'this.f()',
-    '+': 'this.right()',
-    '-': 'this.left()',
-    '−': 'this.left()',
-    '^': 'this.up()',
-    '∧': 'this.up()',
-    '&': 'this.down()',
-    '/': 'this.rollRight()',
-    '\\': 'this.rollLeft()',
-    '|': 'this.turnAround()',
-    '[': 'this.push()',
-    ']': 'this.pop()'
-};
-
-Turtle.prototype.translate = function(axiom) {
-    for (var i = 0; i < axiom.length; i++) {
-        var token = axiom[i];
-        eval(this.instructions[token]);
-    }
+    this.instructions = {
+        'F': this.F,
+        'f': this.f,
+        '+': this.right,
+        '-': this.left,
+        '−': this.left,
+        '^': this.up,
+        '∧': this.up,
+        '&': this.down,
+        '/': this.rollRight,
+        '\\': this.rollLeft,
+        '|': this.turnAround,
+        '[': this.push,
+        ']': this.pop
+    };
 };
 
 Turtle.prototype.generate = function(axiom, generations) {
@@ -184,6 +176,14 @@ Turtle.prototype.pop = function() {
     this.u = state.u;
     this.diameter = state.diameter;
     this.colorIndex = state.colorIndex;
+};
+
+Turtle.prototype.translate = function(axiom) {
+    for (var i = 0; i < axiom.length; i++) {
+        var token = axiom[i];
+        if (typeof this.instructions[token] === "function")
+            this.instructions[token].bind(this)();
+    }
 };
 
 module.exports = {
