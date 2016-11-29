@@ -11,13 +11,19 @@ var material = require("../language/material"),
 function resetModel() {
     "use strict";
 
+    model.scene = new THREE.Scene();
+
     model.elements = {
-        ambientLight: {},
-        lights: []
+        ambientLight: new THREE.AmbientLight(0x404040, 0),
+        hemisphereLight: new THREE.HemisphereLight(0xffffff, 0x404040, 1)
     };
 
+    model.scene.add(
+        model.elements.ambientLight,
+        model.elements.hemisphereLight
+    );
+
     model.settings = {
-        ambientLight: 0x333333,
         cameraPosition: new THREE.Vector3(100, 100, 100),
         color: 0xF05C94,
         material: THREE.MeshPhongMaterial,
@@ -39,10 +45,10 @@ function resetModel() {
         z: 0
     };
 
+    material.updateMaterial();
+
     model.clock = new THREE.Clock();
 
-    material.updateMaterial();
-    model.scene = new THREE.Scene();
     model.cameras = {};
     model.cameras.main = new THREE.PerspectiveCamera(30, 1, 1, 1000000);
     model.cameras.main.position.copy(model.settings.cameraPosition);
