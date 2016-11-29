@@ -15,10 +15,8 @@ var model = require("../model"),
 function ambient(color) {
     color = utils.sanitizeColor(color);
 
-    color = color || model.settings.ambientLight;
-    model.settings.ambientLight = color;
-    model.elements.ambientLight = new THREE.AmbientLight(color);
-    model.scene.add(model.elements.ambientLight);
+    model.elements.ambientLight.color = new THREE.Color(color);
+
     return model.elements.ambientLight;
 }
 
@@ -31,25 +29,25 @@ function ambient(color) {
 function background(color) {
     color = utils.parseColor(color);
 
-    model.settings.bg = color;
     model.renderer.setClearColor(color);
+
+    return model.renderer.getClearColor();
 }
 
 /*
  * Adds a directional light to the scene
  *
  */
-function directional(color, position, intensity) {
+function directional(color, intensity) {
     color = utils.sanitizeColor(color);
 
-    position = position || [1, 1, 1];
-    color = color || '#FFF';
+    color = color;
     intensity = intensity || 1.0;
 
     var light = new THREE.DirectionalLight(color, intensity);
-    light.position.set(position[0], position[1], position[2]);
+    light.position.set(model.cursor.x, model.cursor.y, model.cursor.z);
     model.scene.add(light);
-    model.elements.lights.push(light);
+
     return light;
 }
 
@@ -58,14 +56,18 @@ function directional(color, position, intensity) {
  *
  */
 function hemisphere(skyColor, groundColor, intensity) {
-    skyColor = utils.sanitizeColor(skyColor) || '#FFF';
-    groundColor = utils.sanitizeColor(groundColor) || '#FFF';
     intensity = intensity || 1.0;
 
-    var light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-    model.scene.add(light);
-    model.elements.lights.push(light);
-    return light;
+    skyColor = utils.sanitizeColor(skyColor);
+    skyColor = new THREE.Color(skyColor);
+
+    groundColor = utils.sanitizeColor(groundColor);
+    groundColor = new THREE.Color(groundColor);
+
+    model.elements.hemisphereLight.color = skyColor; // since `HemisphereLight` is based on `Light`, 'skyColor' is just called `color`
+    model.elements.hemisphereLight.groundColor = groundColor;
+
+    return model.elements.hemisphereLight;
 }
 
 /*
@@ -75,7 +77,7 @@ function hemisphere(skyColor, groundColor, intensity) {
 function pointLight(color, position, intensity, distance, decay) {
     color = utils.sanitizeColor(color);
 
-    position = position || [100, 100, 100];
+    position = position;
     intensity = intensity || 1;
     distance = distance || 0;
     decay = decay || 1;
