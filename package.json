@@ -4,8 +4,8 @@
   "description": "Three Dee for everyone",
   "scripts": {
     "main": "node ./src/app.js",
-    "buildDev": "browserify src/controller/editor.js -o src/public/js/editor.js",
-    "build": "browserify src/controller/editor.js | uglifyjs -c --screw-ie8 > src/public/js/editor.js",
+    "buildDev": "mkdir -p src/public/js && browserify src/controller/editor.js -o src/public/js/editor.js",
+    "build": "mkdir -p src/public/js && browserify src/controller/editor.js | uglifyjs -c --screw-ie8 > src/public/js/editor.js",
     "start": "nodemon ./src/app.js",
     "dev": "npm run buildDev && npm start"
   },
