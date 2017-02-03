@@ -27,3 +27,7 @@ for x in [-5 .. 5]
     npm start
 
 Open your browser at [http://localhost:3000](http://localhost:3000)
+
+## Run in production with
+
+    sudo PORT=80 pm2 start src/app.js
