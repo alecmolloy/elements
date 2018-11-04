@@ -67,8 +67,8 @@ Turtle.prototype.F = function(d) {
     d = d || this.d;
     var prime = this.h.clone().multiplyScalar(d);
     space.moveTo(this.x, this.y, this.z);
-    lines.line(prime.x, prime.y, +prime.z);
-    space.move(prime.x, prime.y, +prime.z);
+    lines.line(prime.x, prime.y, prime.z);
+    space.move(prime.x, prime.y, prime.z);
     this.x += prime.x;
     this.y += prime.y;
     this.z += prime.z;
