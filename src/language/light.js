@@ -8,6 +8,8 @@ var model = require("../model"),
     utils = require("./utils"),
     THREE = require("three");
 
+model.elements.lights = []
+
 /*
  * Adds an ambient light to the scene
  *
@@ -77,7 +79,7 @@ function hemisphere(skyColor, groundColor, intensity) {
 function pointLight(color, position, intensity, distance, decay) {
     color = utils.sanitizeColor(color);
 
-    position = position;
+    position = position || [1, 1, 1];
     intensity = intensity || 1;
     distance = distance || 0;
     decay = decay || 1;
