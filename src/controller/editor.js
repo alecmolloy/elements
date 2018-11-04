@@ -64,7 +64,7 @@ aceEditor.setBehavioursEnabled(false);
 aceEditor.focus();
 
 aceEditor.on("change", function(e) {
-    console.log(interpreter.run(aceEditor.getValue()));
+    interpreter.run(aceEditor.getValue());
     saveLocally();
 });
 
