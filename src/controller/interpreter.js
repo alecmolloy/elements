@@ -4,7 +4,7 @@
  * Stateful, functional module that interprets the draw language
  */
 
-var coffee = require("coffee-script"),
+var coffee = require("coffeescript"),
     display = require("./display"),
     THREE = require("three"),
     scene = require("./scene"),
