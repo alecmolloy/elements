@@ -1,0 +1,25 @@
+generations = 4
+
+production = (axiom, generations) -> 
+  if generations > 0
+    successor = ''
+    for token in axiom
+      switch token
+        when 'A' then successor += '[&FL!A]/////’[&FL!A]///////’[&FL!A]'
+        when 'F' then successor += 'S/////F'
+        when 'S' then successor += 'F L'
+        when 'L' then successor += '[’’’∧∧{-f+f+f-|-f+f+f}]'
+        else successor += token
+    return production(successor, generations - 1)
+  else 
+    return axiom
+
+
+turtle = new Turtle(
+    theta: 22.5
+)
+
+turtle.up 90
+turtle.f(-50)
+turtle.F(20)
+turtle.translate(production('A', generations))
