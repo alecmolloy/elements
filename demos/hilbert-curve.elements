@@ -1,0 +1,35 @@
+generations = 4
+
+production = (axiom, generations) -> 
+  if generations > 0
+    successor = ''
+    for token in axiom
+      switch token
+        when 'A' then successor += 'B-F+CFC+F-D&F^D-F+&&CFC+F+B//'
+        when 'B' then successor += 'A&F^CFB^F^D^^-F-D^|F^B|FC^F^A//'
+        when 'C' then successor += '|D^|F^B-F+C^F^A&&FA&F^C+F+B^F^D//'
+        when 'D' then successor += '|CFB-F+B|FA&F^A&&FB-F+B|FC//'
+        else successor += token
+    return production(successor, generations - 1)
+  else 
+    return axiom
+
+
+offset = 10 * (pow(generations, 2) - 1) / 2
+turtle = new Turtle
+    x: -offset
+    y: offset
+    z: offset
+    F: (delta = @delta) -> 
+        prime = @h.clone().multiplyScalar(delta)
+        moveTo @x, @y, @z
+        stroke(rotate(red, (@x + @y) * generations))
+        capsule prime.x, prime.y, + prime.z
+        line prime.x, prime.y, + prime.z
+        move prime.x, prime.y, + prime.z
+        @x += prime.x
+        @y += prime.y
+        @z += prime.z
+
+
+turtle.translate(production('A', generations))

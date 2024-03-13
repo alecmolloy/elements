@@ -64885,10 +64885,10 @@ module.exports = {
 };
 
 },{"../language":33,"../model":45,"./display":25,"./scene":28,"coffeescript":3,"three":24}],28:[function(require,module,exports){
-var material = require("../language/material"),
-    model = require("../model"),
-    THREE = require("three"),
-    OrbitControls = require('three-orbit-controls')(THREE);
+var material = require('../language/material'),
+  model = require('../model'),
+  THREE = require('three'),
+  OrbitControls = require('three-orbit-controls')(THREE)
 /*
  * Reset current drawing model
  *
@@ -64896,80 +64896,80 @@ var material = require("../language/material"),
  * @return void
  */
 function resetModel() {
-    "use strict";
+  'use strict'
 
-    model.scene = new THREE.Scene();
+  model.scene = new THREE.Scene()
 
-    model.elements = {
-        ambientLight: new THREE.AmbientLight(0x404040, 0),
-        hemisphereLight: new THREE.HemisphereLight(0xffffff, 0x404040, 1)
-    };
+  model.elements = {
+    ambientLight: new THREE.AmbientLight(0x404040, 0),
+    hemisphereLight: new THREE.HemisphereLight(0xffffff, 0x404040, 1),
+  }
 
-    model.scene.add(
-        model.elements.ambientLight,
-        model.elements.hemisphereLight
-    );
+  model.scene.add(model.elements.ambientLight, model.elements.hemisphereLight)
 
-    model.settings = {
-        cameraPosition: new THREE.Vector3(100, 100, 100),
-        color: 0xF05C94,
-        material: THREE.MeshPhongMaterial,
-        opacity: 1,
-        poly: 12,
-        shading: THREE.FlatShading,
-        shininess: 0,
-        sidedness: THREE.DoubleSide,
-        specular: 0x101010,
-        stroke: {
-            color: 0xF05C94,
-            width: 1
-        }
-    };
+  model.settings = {
+    cameraPosition: new THREE.Vector3(100, 100, 100),
+    color: 0xf05c94,
+    material: THREE.MeshPhongMaterial,
+    opacity: 1,
+    poly: 12,
+    flatShading: THREE.FlatShading,
+    shininess: 0,
+    sidedness: THREE.DoubleSide,
+    specular: 0x101010,
+    stroke: {
+      color: 0xf05c94,
+      width: 1,
+    },
+  }
 
-    model.cursor = {
-        x: 0,
-        y: 0,
-        z: 0
-    };
+  model.cursor = {
+    x: 0,
+    y: 0,
+    z: 0,
+  }
 
-    material.updateMaterial();
+  material.updateMaterial()
 
-    model.clock = new THREE.Clock();
+  model.clock = new THREE.Clock()
 
-    model.cameras = {};
-    model.cameras.main = new THREE.PerspectiveCamera(30, 1, 1, 1000000);
-    model.cameras.main.position.copy(model.settings.cameraPosition);
+  model.cameras = {}
+  model.cameras.main = new THREE.PerspectiveCamera(30, 1, 1, 1000000)
+  model.cameras.main.position.copy(model.settings.cameraPosition)
 
-    model.cameraControls = new OrbitControls(model.cameras.main, model.renderer.domElement);
-    model.cameraControls.target.set(0, 0, 0);
-    model.renderer.setClearColor(0xffffff, 1);
+  model.cameraControls = new OrbitControls(
+    model.cameras.main,
+    model.renderer.domElement
+  )
+  model.cameraControls.target.set(0, 0, 0)
+  model.renderer.setClearColor(0xffffff, 1)
 }
 
 /*
  * Render loop
  */
 function render() {
-    var delta = model.clock.getDelta();
-    model.cameraControls.update(delta);
+  var delta = model.clock.getDelta()
+  model.cameraControls.update(delta)
 
-    model.renderer.render(model.scene, model.cameras.main);
-    if (model.animationID) {
-        window.cancelAnimationFrame(model.animationID);
-    }
-    model.animationID = window.requestAnimationFrame(render);
+  model.renderer.render(model.scene, model.cameras.main)
+  if (model.animationID) {
+    window.cancelAnimationFrame(model.animationID)
+  }
+  model.animationID = window.requestAnimationFrame(render)
 }
 
-var resizeCamera = function(width, height) {
-    model.renderer.setSize(width, height);
-    model.cameras.main.aspect = width / height;
-    model.cameras.main.updateProjectionMatrix();
-};
+var resizeCamera = function (width, height) {
+  model.renderer.setSize(width, height)
+  model.cameras.main.aspect = width / height
+  model.cameras.main.updateProjectionMatrix()
+}
 
 module.exports = {
-    resetModel: resetModel,
-    resizeCamera: resizeCamera,
-    render: render
-};
+  resetModel: resetModel,
+  resizeCamera: resizeCamera,
+  render: render,
+}
 
 },{"../language/material":37,"../model":45,"three":24,"three-orbit-controls":23}],29:[function(require,module,exports){
 /*
@@ -65040,10 +65040,10 @@ module.exports = {
  * Collection of color commands
  */
 
-var Color = require("color"),
-    model = require("../model"),
-    utils = require("./utils"),
-    material = require("./material");
+var Color = require('color'),
+  model = require('../model'),
+  utils = require('./utils'),
+  material = require('./material')
 
 /*
  * Set current model color
@@ -65052,9 +65052,9 @@ var Color = require("color"),
  * @return void
  */
 function color(val) {
-    val = utils.parseColor(val);
-    model.settings.color = val || 'transparent';
-    material.updateMaterial();
+  val = utils.parseColor(val)
+  model.settings.color = val || 'transparent'
+  material.updateMaterial()
 }
 
 /*
@@ -65064,7 +65064,7 @@ function color(val) {
  * @return {Boolean}
  */
 function dark(color) {
-    return Color(color).dark();
+  return Color(color).dark()
 }
 
 /*
@@ -65074,7 +65074,7 @@ function dark(color) {
  * @return {Boolean}
  */
 function light(color) {
-    return Color(color).light();
+  return Color(color).light()
 }
 
 /*
@@ -65085,7 +65085,7 @@ function light(color) {
  * @return {String}
  */
 function darken(color, amount) {
-    return brightness(color, brightness(color) - amount);
+  return brightness(color, brightness(color) - amount)
 }
 
 /*
@@ -65096,7 +65096,7 @@ function darken(color, amount) {
  * @return {String}
  */
 function lighten(color, amount) {
-    return brightness(color, brightness(color) + amount);
+  return brightness(color, brightness(color) + amount)
 }
 
 /*
@@ -65107,7 +65107,7 @@ function lighten(color, amount) {
  * @return {String|Number}
  */
 function brightness(color, amount) {
-    return getOrSet('hsl', 2, color, amount);
+  return getOrSet('hsl', 2, color, amount)
 }
 
 /*
@@ -65118,7 +65118,7 @@ function brightness(color, amount) {
  */
 
 function setBrightness(color, amount) {
-    return brightness(color, brightness(color) + amount / 2);
+  return brightness(color, brightness(color) + amount / 2)
 }
 
 /*
@@ -65129,7 +65129,7 @@ function setBrightness(color, amount) {
  * @return {String}
  */
 function saturate(color, amount) {
-    return saturation(color, saturation(color) + amount);
+  return saturation(color, saturation(color) + amount)
 }
 
 /*
@@ -65140,7 +65140,7 @@ function saturate(color, amount) {
  */
 
 function setSaturation(color, amount) {
-    return saturation(color, saturation(color) + amount);
+  return saturation(color, saturation(color) + amount)
 }
 
 /*
@@ -65151,7 +65151,7 @@ function setSaturation(color, amount) {
  * @return {String}
  */
 function desaturate(color, amount) {
-    return saturation(color, saturation(color) - amount);
+  return saturation(color, saturation(color) - amount)
 }
 
 /*
@@ -65162,7 +65162,7 @@ function desaturate(color, amount) {
  * @return {String|Number}
  */
 function saturation(color, amount) {
-    return getOrSet('hsl', 1, color, amount);
+  return getOrSet('hsl', 1, color, amount)
 }
 
 /*
@@ -65173,7 +65173,7 @@ function saturation(color, amount) {
  * @return {String|Number}
  */
 function hue(color, amount) {
-    return getOrSet('hsl', 0, color, amount);
+  return getOrSet('hsl', 0, color, amount)
 }
 
 /*
@@ -65184,7 +65184,7 @@ function hue(color, amount) {
  * @return {String}
  */
 function rotate(color, amount) {
-    return Color(color).rotate(amount).rgbaString();
+  return Color(color).rotate(amount).hex()
 }
 
 /*
@@ -65196,7 +65196,7 @@ function rotate(color, amount) {
  * @return {String}
  */
 function rgb(red, green, blue) {
-    return "rgb(" + red + ", " + green + ", " + blue + ")";
+  return 'rgb(' + red + ', ' + green + ', ' + blue + ')'
 }
 
 /*
@@ -65209,7 +65209,7 @@ function rgb(red, green, blue) {
  * @return {String}
  */
 function rgba(red, green, blue, alpha) {
-    return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
+  return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + alpha + ')'
 }
 
 /*
@@ -65219,8 +65219,8 @@ function rgba(red, green, blue, alpha) {
  * @return void
  */
 function opacity(val) {
-    model.settings.opacity = val || 1;
-    material.updateMaterial();
+  model.settings.opacity = val || 1
+  material.updateMaterial()
 }
 
 /*
@@ -65232,8 +65232,10 @@ function opacity(val) {
  * @return {String}
  */
 function mix(a, b, amount) {
-    amount = amount || 50;
-    return Color(a).mix(Color(b), amount / 100).rgbaString();
+  amount = amount || 50
+  return Color(a)
+    .mix(Color(b), amount / 100)
+    .rgbaString()
 }
 
 /*
@@ -65246,42 +65248,42 @@ function mix(a, b, amount) {
  * @return {String|Number}
  */
 function getOrSet(mode, key, color, amount) {
-    color = Color(color);
+  color = Color(color)
 
-    if (typeof amount === 'undefined') {
-        return mode ? color.values[mode][key] : color.values[key];
-    }
+  if (typeof amount === 'undefined') {
+    return mode ? color.values[mode][key] : color.values[key]
+  }
 
-    if (key === 'alpha') {
-        return color.alpha(amount).rgbaString();
-    }
+  if (key === 'alpha') {
+    return color.alpha(amount).rgbaString()
+  }
 
-    var values = color.values[mode];
+  var values = color.values[mode]
 
-    values[key] = amount;
+  values[key] = amount
 
-    return Color().hsl(values).rgbaString();
+  return Color().hsl(values).rgbaString()
 }
 
 module.exports = {
-    color: color,
-    dark: dark,
-    light: light,
-    lighten: lighten,
-    darken: darken,
-    brightness: brightness,
-    mix: mix,
-    saturation: saturation,
-    saturate: saturate,
-    desaturate: desaturate,
-    hue: hue,
-    rotate: rotate,
-    rgb: rgb,
-    rgba: rgba,
-    opacity: opacity,
-    setBrightness: setBrightness,
-    setSaturation: setSaturation
-};
+  color: color,
+  dark: dark,
+  light: light,
+  lighten: lighten,
+  darken: darken,
+  brightness: brightness,
+  mix: mix,
+  saturation: saturation,
+  saturate: saturate,
+  desaturate: desaturate,
+  hue: hue,
+  rotate: rotate,
+  rgb: rgb,
+  rgba: rgba,
+  opacity: opacity,
+  setBrightness: setBrightness,
+  setSaturation: setSaturation,
+}
 
 },{"../model":45,"./material":37,"./utils":44,"color":18}],32:[function(require,module,exports){
 /*
@@ -65291,110 +65293,125 @@ module.exports = {
  */
 
 var model = require('../model'),
-    THREE = require('three');
-
+  THREE = require('three')
 
 /**
  *
  */
 function capsule(dx, dy, dz, openTop, openBottom) {
-    dx = dx || 0;
-    dy = dy || 0;
-    dz = dz || 0;
-    radius = model.settings.stroke.width;
-    if (typeof radius === 'number') {
-        radius = [radius, radius];
-    }
-    openTop = false;
-    openBottom = false;
+  dx = dx || 0
+  dy = dy || 0
+  dz = dz || 0
+  radius = model.settings.stroke.width
+  if (typeof radius === 'number') {
+    radius = [radius, radius]
+  }
+  openTop = false
+  openBottom = false
 
-    var bottom = new THREE.Vector3(model.cursor.x, model.cursor.y, model.cursor.z);
-    var top = new THREE.Vector3(model.cursor.x + dx, model.cursor.y + dy, model.cursor.z + dz);
+  var bottom = new THREE.Vector3(model.cursor.x, model.cursor.y, model.cursor.z)
+  var top = new THREE.Vector3(
+    model.cursor.x + dx,
+    model.cursor.y + dy,
+    model.cursor.z + dz
+  )
 
-    material = new THREE.MeshPhongMaterial({
-        color: model.settings.stroke.color,
-        shading: model.settings.shading,
-        specular: model.settings.specular,
-        shininess: model.settings.shininess,
-        side: THREE.FrontSide
-    });
+  material = new THREE.MeshPhongMaterial({
+    color: model.settings.stroke.color,
+    flatShading: model.settings.flatShading,
+    specular: model.settings.specular,
+    shininess: model.settings.shininess,
+    side: THREE.FrontSide,
+  })
 
-    var capsule = new THREE.Object3D();
-    // get cylinder height
-    var cylAxis = new THREE.Vector3();
-    cylAxis.subVectors(top, bottom);
-    var length = cylAxis.length();
+  var capsule = new THREE.Object3D()
+  // get cylinder height
+  var cylAxis = new THREE.Vector3()
+  cylAxis.subVectors(top, bottom)
+  var length = cylAxis.length()
 
-    // get cylinder center for translation
-    var center = new THREE.Vector3();
-    center.addVectors(top, bottom);
-    center.divideScalar(2.0);
+  // get cylinder center for translation
+  var center = new THREE.Vector3()
+  center.addVectors(top, bottom)
+  center.divideScalar(2.0)
 
-    // always open-ended
-    var cylinderGeo = new THREE.CylinderGeometry(radius[0], radius[1], length, model.settings.poly, 1, (!openTop || !openBottom), 0);
-    var cylinder = new THREE.Mesh(cylinderGeo, material);
+  // always open-ended
+  var cylinderGeo = new THREE.CylinderGeometry(
+    radius[0],
+    radius[1],
+    length,
+    model.settings.poly,
+    1,
+    !openTop || !openBottom,
+    0
+  )
+  var cylinder = new THREE.Mesh(cylinderGeo, material)
 
-    capsule.add(cylinder);
+  capsule.add(cylinder)
 
-    // pass in the cylinder itself, its desired axis, and the place to move the center
+  // pass in the cylinder itself, its desired axis, and the place to move the center
 
-    // Sphere geometry to cap the cylinder if openTop and/or openBottom is false
-    var sphereGeo = new THREE.SphereGeometry(radius[1], model.settings.poly, model.settings.poly);
-    if (!openBottom) {
-        var sphereBottom = new THREE.Mesh(sphereGeo, material);
-        capsule.add(sphereBottom);
-        sphereBottom.translateY(-length / 2);
-    }
-    if (!openTop) {
-        var sphereTop = new THREE.Mesh(sphereGeo, material);
-        capsule.add(sphereTop);
-        sphereTop.translateY(length / 2);
-    }
-    makeLengthAngleAxisTransform(capsule, cylAxis, center);
-    model.scene.add(capsule);
-    return capsule;
+  // Sphere geometry to cap the cylinder if openTop and/or openBottom is false
+  var sphereGeo = new THREE.SphereGeometry(
+    radius[1],
+    model.settings.poly,
+    model.settings.poly
+  )
+  if (!openBottom) {
+    var sphereBottom = new THREE.Mesh(sphereGeo, material)
+    capsule.add(sphereBottom)
+    sphereBottom.translateY(-length / 2)
+  }
+  if (!openTop) {
+    var sphereTop = new THREE.Mesh(sphereGeo, material)
+    capsule.add(sphereTop)
+    sphereTop.translateY(length / 2)
+  }
+  makeLengthAngleAxisTransform(capsule, cylAxis, center)
+  model.scene.add(capsule)
+  return capsule
 }
 
 // Transform cylinder to align with given axis and then move to center
 function makeLengthAngleAxisTransform(cyl, cylAxis, center) {
-    cyl.matrixAutoUpdate = false;
+  cyl.matrixAutoUpdate = false
 
-    // From left to right using frames: translate, then rotate; TR.
-    // So translate is first.
-    cyl.matrix.makeTranslation(center.x, center.y, center.z);
+  // From left to right using frames: translate, then rotate; TR.
+  // So translate is first.
+  cyl.matrix.makeTranslation(center.x, center.y, center.z)
 
-    // take cross product of cylAxis and up vector to get axis of rotation
-    var yAxis = new THREE.Vector3(0, 1, 0);
-    // Needed later for dot product, just do it now;
-    // a little lazy, should really copy it to a local Vector3.
-    cylAxis.normalize();
-    var rotationAxis = new THREE.Vector3();
-    rotationAxis.crossVectors(cylAxis, yAxis);
-    if (rotationAxis.length() < 0.000001) {
-        // Special case: if rotationAxis is just about zero, set to X axis,
-        // so that the angle can be given as 0 or PI. This works ONLY
-        // because we know one of the two axes is +Y.
-        rotationAxis.set(1, 0, 0);
-    }
-    rotationAxis.normalize();
+  // take cross product of cylAxis and up vector to get axis of rotation
+  var yAxis = new THREE.Vector3(0, 1, 0)
+  // Needed later for dot product, just do it now;
+  // a little lazy, should really copy it to a local Vector3.
+  cylAxis.normalize()
+  var rotationAxis = new THREE.Vector3()
+  rotationAxis.crossVectors(cylAxis, yAxis)
+  if (rotationAxis.length() < 0.000001) {
+    // Special case: if rotationAxis is just about zero, set to X axis,
+    // so that the angle can be given as 0 or PI. This works ONLY
+    // because we know one of the two axes is +Y.
+    rotationAxis.set(1, 0, 0)
+  }
+  rotationAxis.normalize()
 
-    // take dot product of cylAxis and up vector to get cosine of angle of rotation
-    var theta = -Math.acos(cylAxis.dot(yAxis));
-    //cyl.matrix.makeRotationAxis( rotationAxis, theta );
-    var rotMatrix = new THREE.Matrix4();
-    rotMatrix.makeRotationAxis(rotationAxis, theta);
-    cyl.matrix.multiply(rotMatrix);
+  // take dot product of cylAxis and up vector to get cosine of angle of rotation
+  var theta = -Math.acos(cylAxis.dot(yAxis))
+  //cyl.matrix.makeRotationAxis( rotationAxis, theta );
+  var rotMatrix = new THREE.Matrix4()
+  rotMatrix.makeRotationAxis(rotationAxis, theta)
+  cyl.matrix.multiply(rotMatrix)
 }
 
 function lineTo(x, y, z, openTop, openBottom) {
-    capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z);
+  capsule(x - model.cursor.x, y - model.cursor.y, z - model.cursor.z)
 }
 
 module.exports = {
-    line: capsule,
-    lineTo: lineTo,
-    capsule: capsule
-};
+  line: capsule,
+  lineTo: lineTo,
+  capsule: capsule,
+}
 
 },{"../model":45,"three":24}],33:[function(require,module,exports){
 /*
@@ -65646,7 +65663,7 @@ module.exports = {
  */
 
 var model = require('../model'),
-    THREE = require('three');
+  THREE = require('three')
 /*
  * Set current model poly count
  *
@@ -65654,7 +65671,7 @@ var model = require('../model'),
  * @return void
  */
 function poly(count) {
-    model.settings.poly = count;
+  model.settings.poly = count
 }
 
 /*
@@ -65664,28 +65681,28 @@ function poly(count) {
  * @return void
  */
 function material(val) {
-    val = val || 'phong';
-    switch (val) {
-        case 'basic':
-            model.settings.material = THREE.MeshBasicMaterial;
-            break;
-        case 'depth':
-            model.settings.material = THREE.MeshDepthMaterial;
-            break;
-        case 'lambert':
-            model.settings.material = THREE.MeshLambertMaterial;
-            break;
-        case 'normal':
-            model.settings.material = THREE.MeshNormalMaterial;
-            break;
-        case 'phong':
-            model.settings.material = THREE.MeshPhongMaterial;
-            break;
-        default:
-            model.settings.material = THREE.MeshPhongMaterial;
-            break;
-    }
-    updateMaterial();
+  val = val || 'phong'
+  switch (val) {
+    case 'basic':
+      model.settings.material = THREE.MeshBasicMaterial
+      break
+    case 'depth':
+      model.settings.material = THREE.MeshDepthMaterial
+      break
+    case 'lambert':
+      model.settings.material = THREE.MeshLambertMaterial
+      break
+    case 'normal':
+      model.settings.material = THREE.MeshNormalMaterial
+      break
+    case 'phong':
+      model.settings.material = THREE.MeshPhongMaterial
+      break
+    default:
+      model.settings.material = THREE.MeshPhongMaterial
+      break
+  }
+  updateMaterial()
 }
 
 /*
@@ -65695,8 +65712,8 @@ function material(val) {
  * @return void
  */
 function shading(type) {
-    model.settings.shading = type || THREE.FlatShading;
-    updateMaterial();
+  model.settings.flatShading = type || THREE.FlatShading
+  updateMaterial()
 }
 
 /*
@@ -65706,8 +65723,8 @@ function shading(type) {
  * @return void
  */
 function shininess(type) {
-    model.settings.shininess = type || 0;
-    updateMaterial();
+  model.settings.shininess = type || 0
+  updateMaterial()
 }
 
 /*
@@ -65717,8 +65734,9 @@ function shininess(type) {
  * @return void
  */
 function sides(val) {
-    model.settings.sidedness = typeof val !== 'undefined' ? val : THREE.DoubleSided;
-    updateMaterial();
+  model.settings.sidedness =
+    typeof val !== 'undefined' ? val : THREE.DoubleSided
+  updateMaterial()
 }
 
 /*
@@ -65728,8 +65746,8 @@ function sides(val) {
  * @return void
  */
 function specular(val) {
-    model.settings.specular = typeof val !== 'undefined' ? val : 0x101010;
-    updateMaterial();
+  model.settings.specular = typeof val !== 'undefined' ? val : 0x101010
+  updateMaterial()
 }
 
 /*
@@ -65738,27 +65756,28 @@ function specular(val) {
  * @return {Object}
  */
 function updateMaterial() {
-    var config = {
-        color: model.settings.color,
-        shading: model.settings.shading,
-        specular: model.settings.specular,
-        shininess: model.settings.shininess,
-        transparent: model.settings.opacity < 1,
-        opacity: model.settings.opacity,
-        side: model.settings.sidedness
-    };
-    model.elements.material = new model.settings.material(config);
+  var config = {
+    color: model.settings.color,
+    flatShading: model.settings.flatShading,
+    specular: model.settings.specular,
+    shininess: model.settings.shininess,
+    transparent: model.settings.opacity < 1,
+    opacity: model.settings.opacity,
+    side: model.settings.sidedness,
+  }
+  model.elements.material = new model.settings.material(config)
 }
 
 module.exports = {
-    material: material,
-    poly: poly,
-    shading: shading,
-    shininess: shininess,
-    sides: sides,
-    specular: specular,
-    updateMaterial: updateMaterial
-};
+  material: material,
+  poly: poly,
+  shading,
+  flatShading: shading,
+  shininess: shininess,
+  sides: sides,
+  specular: specular,
+  updateMaterial: updateMaterial,
+}
 
 },{"../model":45,"three":24}],38:[function(require,module,exports){
 var math = Object.getOwnPropertyNames(Math);
@@ -66289,197 +66308,213 @@ module.exports = {
 module.exports.time = Date.now;
 
 },{}],43:[function(require,module,exports){
-var space = require('./space'),
-    lines = require('./lines'),
-    THREE = require('three');
+const space = require('./space'),
+  lines = require('./lines'),
+  THREE = require('three')
 
-var Turtle = function Turtle(config) {
-    config = typeof config !== 'undefined' ? config : {};
-    this.x = typeof config.x !== 'undefined' ? config.x : 0;
-    this.y = typeof config.y !== 'undefined' ? config.y : 0;
-    this.z = typeof config.z !== 'undefined' ? config.z : 0;
-    this.d = typeof config.delta !== 'undefined' ? config.delta : 10;
-    this.theta = typeof config.theta !== 'undefined' ? config.theta : 90;
-    this.productions = typeof config.productions !== 'undefined' ? config.productions : {};
-    this.h = new THREE.Vector3(1, 0, 0);
-    this.l = new THREE.Vector3(0, 0, 1);
-    this.u = new THREE.Vector3(0, 1, 0);
-    this.stack = [];
+class Turtle {
+  h = new THREE.Vector3(1, 0, 0)
+  l = new THREE.Vector3(0, 0, 1)
+  u = new THREE.Vector3(0, 1, 0)
+  stack = []
+
+  constructor({
+    x = 0,
+    y = 0,
+    z = 0,
+    delta = 10,
+    theta = 90,
+    productions = {},
+    F = this.F,
+  }) {
+    this.x = x
+    this.y = y
+    this.z = z
+    this.delta = delta
+    this.theta = theta
+    this.productions = productions
+
     this.instructions = {
-        'F': this.F,
-        'f': this.f,
-        '+': this.right,
-        '-': this.left,
-        '−': this.left,
-        '^': this.up,
-        '∧': this.up,
-        '&': this.down,
-        '/': this.rollRight,
-        '\\': this.rollLeft,
-        '|': this.turnAround,
-        '[': this.push,
-        ']': this.pop
-    };
-};
+      F: F,
+      f: this.f,
+      '+': this.right,
+      '-': this.left,
+      '−': this.left,
+      '^': this.up,
+      '∧': this.up,
+      '&': this.down,
+      '/': this.rollRight,
+      '\\': this.rollLeft,
+      '|': this.turnAround,
+      '[': this.push,
+      ']': this.pop,
+    }
+  }
 
-Turtle.prototype.generate = function(axiom, generations) {
+  generate(axiom, generations) {
     if (generations > 0) {
-        successor = '';
-        for (var i = 0; i < axiom.length; i++) {
-            var token = axiom[i]; // Select a single character out of the axiom for matching against the production list
-            if (this.productions[token]) { // check if the token is in the production list
-                if (typeof this.productions[token] === 'object') { // check if this production is stochastic
-                    // check to see the probabilities total
-                    var probabilityTotal = 0;
-                    var probabilities = [];
-                    for (var j = 1; j <= Object.keys(this.productions[token]).length; j++) { // iterate through possible productions
-                        probabilityTotal += parseFloat(this.productions[token][j].probability); // add their probabilities up
-                        probabilities.push(probabilityTotal); // and store each step in a value for comparison later
-                    }
-                    var randomNum = Math.random() * probabilityTotal;
-                    for (var k = 0; k < probabilities.length; k++) { // Iterate over probabilities.
-                        if (randomNum < probabilities[k]) { // If `randomNum` is greater than the given probability, it is a match!
-                            successor += this.productions[token][k + 1].word; // add the randomly selected production word
-                        }
-                    }
-                } else { // If the production is determanistic, add the match to the successor
-                    successor += this.productions[token];
-                }
-            } else { // if the token is not in the production list, just put it back in with no modification
-                successor += token;
+      successor = ''
+      for (const i = 0; i < axiom.length; i++) {
+        const token = axiom[i] // Select a single character out of the axiom for matching against the production list
+        if (this.productions[token]) {
+          // check if the token is in the production list
+          if (typeof this.productions[token] === 'object') {
+            // check if this production is stochastic
+            // check to see the probabilities total
+            const probabilityTotal = 0
+            const probabilities = []
+            for (
+              const j = 1;
+              j <= Object.keys(this.productions[token]).length;
+              j++
+            ) {
+              // iterate through possible productions
+              probabilityTotal += parseFloat(
+                this.productions[token][j].probability
+              ) // add their probabilities up
+              probabilities.push(probabilityTotal) // and store each step in a value for comparison later
             }
+            const randomNum = Math.random() * probabilityTotal
+            for (const k = 0; k < probabilities.length; k++) {
+              // Iterate over probabilities.
+              if (randomNum < probabilities[k]) {
+                // If `randomNum` is greater than the given probability, it is a match!
+                successor += this.productions[token][k + 1].word // add the randomly selected production word
+              }
+            }
+          } else {
+            // If the production is deterministic, add the match to the successor
+            successor += this.productions[token]
+          }
+        } else {
+          // if the token is not in the production list, just put it back in with no modification
+          successor += token
         }
-        return this.generate(successor, --generations);
+      }
+      return this.generate(successor, --generations)
     }
-    return axiom;
-};
+    return axiom
+  }
 
-Turtle.prototype.F = function(d) {
-    d = d || this.d;
-    var prime = this.h.clone().multiplyScalar(d);
-    space.moveTo(this.x, this.y, this.z);
-    lines.line(prime.x, prime.y, prime.z);
-    space.move(prime.x, prime.y, prime.z);
-    this.x += prime.x;
-    this.y += prime.y;
-    this.z += prime.z;
-};
+  F(delta = this.delta) {
+    const prime = this.h.clone().multiplyScalar(delta)
+    space.moveTo(this.x, this.y, this.z)
+    lines.line(prime.x, prime.y, prime.z)
+    space.move(prime.x, prime.y, prime.z)
+    this.x += prime.x
+    this.y += prime.y
+    this.z += prime.z
+  }
 
-Turtle.prototype.f = function(d) {
-    d = d || this.d;
-    var prime = this.h.clone().multiplyScalar(d);
-    this.x += prime.x;
-    this.y += prime.y;
-    this.z += prime.z;
-    space.moveTo(this.x, this.y, this.z);
-};
+  f(delta = this.delta) {
+    const prime = this.h.clone().multiplyScalar(delta)
+    this.x += prime.x
+    this.y += prime.y
+    this.z += prime.z
+    space.moveTo(this.x, this.y, this.z)
+  }
 
-Turtle.prototype.yaw = function(angle) {
-    angle = angle / 180 * Math.PI;
-    this.h.applyAxisAngle(this.u, angle);
-    this.l.applyAxisAngle(this.u, angle);
-    this.u.applyAxisAngle(this.u, angle);
-};
+  yaw(angle) {
+    const radiansAngle = (angle / 180) * Math.PI
+    this.h.applyAxisAngle(this.u, radiansAngle)
+    this.l.applyAxisAngle(this.u, radiansAngle)
+    this.u.applyAxisAngle(this.u, radiansAngle)
+  }
 
-Turtle.prototype.pitch = function(angle) {
-    angle = angle / 180 * Math.PI;
-    this.h.applyAxisAngle(this.l, angle);
-    this.l.applyAxisAngle(this.l, angle);
-    this.u.applyAxisAngle(this.l, angle);
-};
+  pitch(angle) {
+    const radiansAngle = (angle / 180) * Math.PI
+    this.h.applyAxisAngle(this.l, radiansAngle)
+    this.l.applyAxisAngle(this.l, radiansAngle)
+    this.u.applyAxisAngle(this.l, radiansAngle)
+  }
 
-Turtle.prototype.roll = function(angle) {
-    angle = angle / 180 * Math.PI;
-    this.h.applyAxisAngle(this.h, angle);
-    this.l.applyAxisAngle(this.h, angle);
-    this.u.applyAxisAngle(this.h, angle);
-};
+  roll(angle) {
+    const radiansAngle = (angle / 180) * Math.PI
+    this.h.applyAxisAngle(this.h, radiansAngle)
+    this.l.applyAxisAngle(this.h, radiansAngle)
+    this.u.applyAxisAngle(this.h, radiansAngle)
+  }
 
-Turtle.prototype.right = function(angle) {
-    angle = angle || this.theta;
-    this.yaw(-angle);
-};
+  right(angle = this.theta) {
+    this.yaw(-angle)
+  }
 
-Turtle.prototype.left = function(angle) {
-    angle = angle || this.theta;
-    this.yaw(angle);
-};
+  left(angle = this.theta) {
+    this.yaw(angle)
+  }
 
-Turtle.prototype.up = function(angle) {
-    angle = angle || this.theta;
-    this.pitch(angle);
-};
+  up(angle = this.theta) {
+    this.pitch(angle)
+  }
 
-Turtle.prototype.down = function(angle) {
-    angle = angle || this.theta;
-    this.pitch(-angle);
-};
+  down(angle = this.theta) {
+    this.pitch(-angle)
+  }
 
-Turtle.prototype.rollRight = function(angle) {
-    angle = angle || this.theta;
-    this.roll(angle);
-};
+  rollRight(angle = this.theta) {
+    this.roll(angle)
+  }
 
-Turtle.prototype.rollLeft = function(angle) {
-    angle = angle || this.theta;
-    this.roll(-angle);
-};
+  rollLeft(angle = this.theta) {
+    this.roll(-angle)
+  }
 
-Turtle.prototype.turnAround = function() {
-    this.yaw(180);
-};
+  turnAround() {
+    this.yaw(180)
+  }
 
-Turtle.prototype.goTo = function(x, y, z) {
-    this.x = typeof x !== 'undefined' ? x : 0;
-    this.y = typeof x !== 'undefined' ? y : 0;
-    this.z = typeof x !== 'undefined' ? z : 0;
-};
+  goTo(x = 0, y = 0, z = 0) {
+    this.x = x
+    this.y = y
+    this.z = z
+  }
 
-Turtle.prototype.incrementColorIndex = function() {
-    ++this.colorIndex;
-};
+  incrementColorIndex() {
+    ++this.colorIndex
+  }
 
-Turtle.prototype.decrementDiameter = function() {
-    --this.diameter;
-};
+  decrementDiameter() {
+    --this.diameter
+  }
 
-Turtle.prototype.push = function() {
-    var state = {
-        x: this.x,
-        y: this.y,
-        z: this.z,
-        h: this.h.clone(),
-        l: this.l.clone(),
-        u: this.u.clone(),
-        diameter: this.diameter,
-        colorIndex: this.colorIndex
-    };
-    this.stack.push(state);
-};
-
-Turtle.prototype.pop = function() {
-    var state = this.stack.pop();
-    this.x = state.x;
-    this.y = state.y;
-    this.z = state.z;
-    this.h = state.h;
-    this.l = state.l;
-    this.u = state.u;
-    this.diameter = state.diameter;
-    this.colorIndex = state.colorIndex;
-};
-
-Turtle.prototype.translate = function(axiom) {
-    for (var i = 0; i < axiom.length; i++) {
-        var token = axiom[i];
-        if (typeof this.instructions[token] === "function")
-            this.instructions[token].bind(this)();
+  push() {
+    const state = {
+      x: this.x,
+      y: this.y,
+      z: this.z,
+      h: this.h.clone(),
+      l: this.l.clone(),
+      u: this.u.clone(),
+      diameter: this.diameter,
+      colorIndex: this.colorIndex,
     }
-};
+    this.stack.push(state)
+  }
+
+  pop() {
+    const state = this.stack.pop()
+    this.x = state.x
+    this.y = state.y
+    this.z = state.z
+    this.h = state.h
+    this.l = state.l
+    this.u = state.u
+    this.diameter = state.diameter
+    this.colorIndex = state.colorIndex
+  }
+
+  translate(axiom) {
+    for (let i = 0; i < axiom.length; i++) {
+      if (axiom[i] in this.instructions) {
+        this.instructions[axiom[i]].bind(this)()
+      }
+    }
+  }
+}
 
 module.exports = {
-    Turtle: Turtle
-};
+  Turtle,
+}
 
 },{"./lines":36,"./space":41,"three":24}],44:[function(require,module,exports){
 /*
