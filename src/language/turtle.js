@@ -16,7 +16,7 @@ class Turtle {
     theta = 90,
     productions = {},
     F = this.F,
-  }) {
+  } = {}) {
     this.x = x
     this.y = y
     this.z = z
