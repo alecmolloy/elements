@@ -1,4 +1,4 @@
-generations = 4
+generations = 2
 
 production = (axiom, generations) -> 
   if generations > 0
