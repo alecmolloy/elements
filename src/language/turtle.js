@@ -17,6 +17,7 @@ class Turtle {
     productions = {},
     F = this.F,
   } = {}) {
+    this.F = F
     this.x = x
     this.y = y
     this.z = z

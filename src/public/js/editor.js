@@ -15338,6 +15338,478 @@ swizzle.wrap = function (fn) {
 };
 
 },{"is-arrayish":20}],23:[function(require,module,exports){
+"use strict";
+/*
+ * A fast javascript implementation of simplex noise by Jonas Wagner
+
+Based on a speed-improved simplex noise algorithm for 2D, 3D and 4D in Java.
+Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
+With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
+Better rank ordering method by Stefan Gustavson in 2012.
+
+ Copyright (c) 2022 Jonas Wagner
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildPermutationTable = exports.createNoise4D = exports.createNoise3D = exports.createNoise2D = void 0;
+// these #__PURE__ comments help uglifyjs with dead code removal
+// 
+const F2 = /*#__PURE__*/ 0.5 * (Math.sqrt(3.0) - 1.0);
+const G2 = /*#__PURE__*/ (3.0 - Math.sqrt(3.0)) / 6.0;
+const F3 = 1.0 / 3.0;
+const G3 = 1.0 / 6.0;
+const F4 = /*#__PURE__*/ (Math.sqrt(5.0) - 1.0) / 4.0;
+const G4 = /*#__PURE__*/ (5.0 - Math.sqrt(5.0)) / 20.0;
+// I'm really not sure why this | 0 (basically a coercion to int)
+// is making this faster but I get ~5 million ops/sec more on the
+// benchmarks across the board or a ~10% speedup.
+const fastFloor = (x) => Math.floor(x) | 0;
+const grad2 = /*#__PURE__*/ new Float64Array([1, 1,
+    -1, 1,
+    1, -1,
+    -1, -1,
+    1, 0,
+    -1, 0,
+    1, 0,
+    -1, 0,
+    0, 1,
+    0, -1,
+    0, 1,
+    0, -1]);
+// double seems to be faster than single or int's
+// probably because most operations are in double precision
+const grad3 = /*#__PURE__*/ new Float64Array([1, 1, 0,
+    -1, 1, 0,
+    1, -1, 0,
+    -1, -1, 0,
+    1, 0, 1,
+    -1, 0, 1,
+    1, 0, -1,
+    -1, 0, -1,
+    0, 1, 1,
+    0, -1, 1,
+    0, 1, -1,
+    0, -1, -1]);
+// double is a bit quicker here as well
+const grad4 = /*#__PURE__*/ new Float64Array([0, 1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, -1,
+    0, -1, 1, 1, 0, -1, 1, -1, 0, -1, -1, 1, 0, -1, -1, -1,
+    1, 0, 1, 1, 1, 0, 1, -1, 1, 0, -1, 1, 1, 0, -1, -1,
+    -1, 0, 1, 1, -1, 0, 1, -1, -1, 0, -1, 1, -1, 0, -1, -1,
+    1, 1, 0, 1, 1, 1, 0, -1, 1, -1, 0, 1, 1, -1, 0, -1,
+    -1, 1, 0, 1, -1, 1, 0, -1, -1, -1, 0, 1, -1, -1, 0, -1,
+    1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, -1, 0,
+    -1, 1, 1, 0, -1, 1, -1, 0, -1, -1, 1, 0, -1, -1, -1, 0]);
+/**
+ * Creates a 2D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction2D}
+ */
+function createNoise2D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating this yields a little ~3% performance improvement.
+    const permGrad2x = new Float64Array(perm).map(v => grad2[(v % 12) * 2]);
+    const permGrad2y = new Float64Array(perm).map(v => grad2[(v % 12) * 2 + 1]);
+    return function noise2D(x, y) {
+        // if(!isFinite(x) || !isFinite(y)) return 0;
+        let n0 = 0; // Noise contributions from the three corners
+        let n1 = 0;
+        let n2 = 0;
+        // Skew the input space to determine which simplex cell we're in
+        const s = (x + y) * F2; // Hairy factor for 2D
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const t = (i + j) * G2;
+        const X0 = i - t; // Unskew the cell origin back to (x,y) space
+        const Y0 = j - t;
+        const x0 = x - X0; // The x,y distances from the cell origin
+        const y0 = y - Y0;
+        // For the 2D case, the simplex shape is an equilateral triangle.
+        // Determine which simplex we are in.
+        let i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
+        if (x0 > y0) {
+            i1 = 1;
+            j1 = 0;
+        } // lower triangle, XY order: (0,0)->(1,0)->(1,1)
+        else {
+            i1 = 0;
+            j1 = 1;
+        } // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+        // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+        // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+        // c = (3-sqrt(3))/6
+        const x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+        const y1 = y0 - j1 + G2;
+        const x2 = x0 - 1.0 + 2.0 * G2; // Offsets for last corner in (x,y) unskewed coords
+        const y2 = y0 - 1.0 + 2.0 * G2;
+        // Work out the hashed gradient indices of the three simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        // Calculate the contribution from the three corners
+        let t0 = 0.5 - x0 * x0 - y0 * y0;
+        if (t0 >= 0) {
+            const gi0 = ii + perm[jj];
+            const g0x = permGrad2x[gi0];
+            const g0y = permGrad2y[gi0];
+            t0 *= t0;
+            // n0 = t0 * t0 * (grad2[gi0] * x0 + grad2[gi0 + 1] * y0); // (x,y) of grad3 used for 2D gradient
+            n0 = t0 * t0 * (g0x * x0 + g0y * y0);
+        }
+        let t1 = 0.5 - x1 * x1 - y1 * y1;
+        if (t1 >= 0) {
+            const gi1 = ii + i1 + perm[jj + j1];
+            const g1x = permGrad2x[gi1];
+            const g1y = permGrad2y[gi1];
+            t1 *= t1;
+            // n1 = t1 * t1 * (grad2[gi1] * x1 + grad2[gi1 + 1] * y1);
+            n1 = t1 * t1 * (g1x * x1 + g1y * y1);
+        }
+        let t2 = 0.5 - x2 * x2 - y2 * y2;
+        if (t2 >= 0) {
+            const gi2 = ii + 1 + perm[jj + 1];
+            const g2x = permGrad2x[gi2];
+            const g2y = permGrad2y[gi2];
+            t2 *= t2;
+            // n2 = t2 * t2 * (grad2[gi2] * x2 + grad2[gi2 + 1] * y2);
+            n2 = t2 * t2 * (g2x * x2 + g2y * y2);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to return values in the interval [-1,1].
+        return 70.0 * (n0 + n1 + n2);
+    };
+}
+exports.createNoise2D = createNoise2D;
+/**
+ * Creates a 3D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction3D}
+ */
+function createNoise3D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating these seems to yield a speedup of over 15%
+    const permGrad3x = new Float64Array(perm).map(v => grad3[(v % 12) * 3]);
+    const permGrad3y = new Float64Array(perm).map(v => grad3[(v % 12) * 3 + 1]);
+    const permGrad3z = new Float64Array(perm).map(v => grad3[(v % 12) * 3 + 2]);
+    return function noise3D(x, y, z) {
+        let n0, n1, n2, n3; // Noise contributions from the four corners
+        // Skew the input space to determine which simplex cell we're in
+        const s = (x + y + z) * F3; // Very nice and simple skew factor for 3D
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const k = fastFloor(z + s);
+        const t = (i + j + k) * G3;
+        const X0 = i - t; // Unskew the cell origin back to (x,y,z) space
+        const Y0 = j - t;
+        const Z0 = k - t;
+        const x0 = x - X0; // The x,y,z distances from the cell origin
+        const y0 = y - Y0;
+        const z0 = z - Z0;
+        // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+        // Determine which simplex we are in.
+        let i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+        let i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+        if (x0 >= y0) {
+            if (y0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // X Y Z order
+            else if (x0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // X Z Y order
+            else {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // Z X Y order
+        }
+        else { // x0<y0
+            if (y0 < z0) {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Z Y X order
+            else if (x0 < z0) {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Y Z X order
+            else {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // Y X Z order
+        }
+        // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+        // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+        // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
+        // c = 1/6.
+        const x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+        const y1 = y0 - j1 + G3;
+        const z1 = z0 - k1 + G3;
+        const x2 = x0 - i2 + 2.0 * G3; // Offsets for third corner in (x,y,z) coords
+        const y2 = y0 - j2 + 2.0 * G3;
+        const z2 = z0 - k2 + 2.0 * G3;
+        const x3 = x0 - 1.0 + 3.0 * G3; // Offsets for last corner in (x,y,z) coords
+        const y3 = y0 - 1.0 + 3.0 * G3;
+        const z3 = z0 - 1.0 + 3.0 * G3;
+        // Work out the hashed gradient indices of the four simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        const kk = k & 255;
+        // Calculate the contribution from the four corners
+        let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+        if (t0 < 0)
+            n0 = 0.0;
+        else {
+            const gi0 = ii + perm[jj + perm[kk]];
+            t0 *= t0;
+            n0 = t0 * t0 * (permGrad3x[gi0] * x0 + permGrad3y[gi0] * y0 + permGrad3z[gi0] * z0);
+        }
+        let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+        if (t1 < 0)
+            n1 = 0.0;
+        else {
+            const gi1 = ii + i1 + perm[jj + j1 + perm[kk + k1]];
+            t1 *= t1;
+            n1 = t1 * t1 * (permGrad3x[gi1] * x1 + permGrad3y[gi1] * y1 + permGrad3z[gi1] * z1);
+        }
+        let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+        if (t2 < 0)
+            n2 = 0.0;
+        else {
+            const gi2 = ii + i2 + perm[jj + j2 + perm[kk + k2]];
+            t2 *= t2;
+            n2 = t2 * t2 * (permGrad3x[gi2] * x2 + permGrad3y[gi2] * y2 + permGrad3z[gi2] * z2);
+        }
+        let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+        if (t3 < 0)
+            n3 = 0.0;
+        else {
+            const gi3 = ii + 1 + perm[jj + 1 + perm[kk + 1]];
+            t3 *= t3;
+            n3 = t3 * t3 * (permGrad3x[gi3] * x3 + permGrad3y[gi3] * y3 + permGrad3z[gi3] * z3);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to stay just inside [-1,1]
+        return 32.0 * (n0 + n1 + n2 + n3);
+    };
+}
+exports.createNoise3D = createNoise3D;
+/**
+ * Creates a 4D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction4D}
+ */
+function createNoise4D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating these leads to a ~10% speedup
+    const permGrad4x = new Float64Array(perm).map(v => grad4[(v % 32) * 4]);
+    const permGrad4y = new Float64Array(perm).map(v => grad4[(v % 32) * 4 + 1]);
+    const permGrad4z = new Float64Array(perm).map(v => grad4[(v % 32) * 4 + 2]);
+    const permGrad4w = new Float64Array(perm).map(v => grad4[(v % 32) * 4 + 3]);
+    return function noise4D(x, y, z, w) {
+        let n0, n1, n2, n3, n4; // Noise contributions from the five corners
+        // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
+        const s = (x + y + z + w) * F4; // Factor for 4D skewing
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const k = fastFloor(z + s);
+        const l = fastFloor(w + s);
+        const t = (i + j + k + l) * G4; // Factor for 4D unskewing
+        const X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
+        const Y0 = j - t;
+        const Z0 = k - t;
+        const W0 = l - t;
+        const x0 = x - X0; // The x,y,z,w distances from the cell origin
+        const y0 = y - Y0;
+        const z0 = z - Z0;
+        const w0 = w - W0;
+        // For the 4D case, the simplex is a 4D shape I won't even try to describe.
+        // To find out which of the 24 possible simplices we're in, we need to
+        // determine the magnitude ordering of x0, y0, z0 and w0.
+        // Six pair-wise comparisons are performed between each possible pair
+        // of the four coordinates, and the results are used to rank the numbers.
+        let rankx = 0;
+        let ranky = 0;
+        let rankz = 0;
+        let rankw = 0;
+        if (x0 > y0)
+            rankx++;
+        else
+            ranky++;
+        if (x0 > z0)
+            rankx++;
+        else
+            rankz++;
+        if (x0 > w0)
+            rankx++;
+        else
+            rankw++;
+        if (y0 > z0)
+            ranky++;
+        else
+            rankz++;
+        if (y0 > w0)
+            ranky++;
+        else
+            rankw++;
+        if (z0 > w0)
+            rankz++;
+        else
+            rankw++;
+        // simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+        // Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+        // impossible. Only the 24 indices which have non-zero entries make any sense.
+        // We use a thresholding to set the coordinates in turn from the largest magnitude.
+        // Rank 3 denotes the largest coordinate.
+        // Rank 2 denotes the second largest coordinate.
+        // Rank 1 denotes the second smallest coordinate.
+        // The integer offsets for the second simplex corner
+        const i1 = rankx >= 3 ? 1 : 0;
+        const j1 = ranky >= 3 ? 1 : 0;
+        const k1 = rankz >= 3 ? 1 : 0;
+        const l1 = rankw >= 3 ? 1 : 0;
+        // The integer offsets for the third simplex corner
+        const i2 = rankx >= 2 ? 1 : 0;
+        const j2 = ranky >= 2 ? 1 : 0;
+        const k2 = rankz >= 2 ? 1 : 0;
+        const l2 = rankw >= 2 ? 1 : 0;
+        // The integer offsets for the fourth simplex corner
+        const i3 = rankx >= 1 ? 1 : 0;
+        const j3 = ranky >= 1 ? 1 : 0;
+        const k3 = rankz >= 1 ? 1 : 0;
+        const l3 = rankw >= 1 ? 1 : 0;
+        // The fifth corner has all coordinate offsets = 1, so no need to compute that.
+        const x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
+        const y1 = y0 - j1 + G4;
+        const z1 = z0 - k1 + G4;
+        const w1 = w0 - l1 + G4;
+        const x2 = x0 - i2 + 2.0 * G4; // Offsets for third corner in (x,y,z,w) coords
+        const y2 = y0 - j2 + 2.0 * G4;
+        const z2 = z0 - k2 + 2.0 * G4;
+        const w2 = w0 - l2 + 2.0 * G4;
+        const x3 = x0 - i3 + 3.0 * G4; // Offsets for fourth corner in (x,y,z,w) coords
+        const y3 = y0 - j3 + 3.0 * G4;
+        const z3 = z0 - k3 + 3.0 * G4;
+        const w3 = w0 - l3 + 3.0 * G4;
+        const x4 = x0 - 1.0 + 4.0 * G4; // Offsets for last corner in (x,y,z,w) coords
+        const y4 = y0 - 1.0 + 4.0 * G4;
+        const z4 = z0 - 1.0 + 4.0 * G4;
+        const w4 = w0 - 1.0 + 4.0 * G4;
+        // Work out the hashed gradient indices of the five simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        const kk = k & 255;
+        const ll = l & 255;
+        // Calculate the contribution from the five corners
+        let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+        if (t0 < 0)
+            n0 = 0.0;
+        else {
+            const gi0 = ii + perm[jj + perm[kk + perm[ll]]];
+            t0 *= t0;
+            n0 = t0 * t0 * (permGrad4x[gi0] * x0 + permGrad4y[gi0] * y0 + permGrad4z[gi0] * z0 + permGrad4w[gi0] * w0);
+        }
+        let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+        if (t1 < 0)
+            n1 = 0.0;
+        else {
+            const gi1 = ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]];
+            t1 *= t1;
+            n1 = t1 * t1 * (permGrad4x[gi1] * x1 + permGrad4y[gi1] * y1 + permGrad4z[gi1] * z1 + permGrad4w[gi1] * w1);
+        }
+        let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+        if (t2 < 0)
+            n2 = 0.0;
+        else {
+            const gi2 = ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]];
+            t2 *= t2;
+            n2 = t2 * t2 * (permGrad4x[gi2] * x2 + permGrad4y[gi2] * y2 + permGrad4z[gi2] * z2 + permGrad4w[gi2] * w2);
+        }
+        let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+        if (t3 < 0)
+            n3 = 0.0;
+        else {
+            const gi3 = ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]];
+            t3 *= t3;
+            n3 = t3 * t3 * (permGrad4x[gi3] * x3 + permGrad4y[gi3] * y3 + permGrad4z[gi3] * z3 + permGrad4w[gi3] * w3);
+        }
+        let t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+        if (t4 < 0)
+            n4 = 0.0;
+        else {
+            const gi4 = ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]];
+            t4 *= t4;
+            n4 = t4 * t4 * (permGrad4x[gi4] * x4 + permGrad4y[gi4] * y4 + permGrad4z[gi4] * z4 + permGrad4w[gi4] * w4);
+        }
+        // Sum up and scale the result to cover the range [-1,1]
+        return 27.0 * (n0 + n1 + n2 + n3 + n4);
+    };
+}
+exports.createNoise4D = createNoise4D;
+/**
+ * Builds a random permutation table.
+ * This is exported only for (internal) testing purposes.
+ * Do not rely on this export.
+ * @private
+ */
+function buildPermutationTable(random) {
+    const tableSize = 512;
+    const p = new Uint8Array(tableSize);
+    for (let i = 0; i < tableSize / 2; i++) {
+        p[i] = i;
+    }
+    for (let i = 0; i < tableSize / 2 - 1; i++) {
+        const r = i + ~~(random() * (256 - i));
+        const aux = p[i];
+        p[i] = p[r];
+        p[r] = aux;
+    }
+    for (let i = 256; i < tableSize; i++) {
+        p[i] = p[i - 256];
+    }
+    return p;
+}
+exports.buildPermutationTable = buildPermutationTable;
+
+},{}],24:[function(require,module,exports){
 module.exports = function( THREE ) {
 	/**
 	 * @author qiao / https://github.com/qiao
@@ -16359,7 +16831,7 @@ module.exports = function( THREE ) {
 	return OrbitControls;
 };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -64615,7 +65087,7 @@ module.exports = function( THREE ) {
 
 })));
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var model = require("../model"),
     THREE = require("three"),
     scene = require("./scene");
@@ -64680,92 +65152,96 @@ module.exports = {
     toggleFullscreenDisplay: toggleFullscreenDisplay
 };
 
-},{"../model":45,"./scene":28,"three":24}],26:[function(require,module,exports){
-var display = require("./display"),
-    interpreter = require("./interpreter");
+},{"../model":47,"./scene":29,"three":25}],27:[function(require,module,exports){
+var display = require('./display'),
+  interpreter = require('./interpreter')
 
-var loadCode = function() {
-    return localStorage.getItem("elements-3d-code");
-};
+var loadCode = function () {
+  return localStorage.getItem('elements-3d-code')
+}
 
-var resetCode = function() {
-    aceEditor.setValue("");
-};
+var resetCode = function () {
+  aceEditor.setValue('')
+}
 
-var saveLocally = function() {
-    localStorage.setItem("elements-3d-code", aceEditor.getValue());
-};
+var saveLocally = function () {
+  localStorage.setItem('elements-3d-code', aceEditor.getValue())
+}
 
-var setCode = function(value) {
-    aceEditor.setValue(value);
-};
-
-window.addEventListener(
-    "dragover",
-    function handleDragOver(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-        document.getElementById("editor").classList.add("dragOver");
-    },
-    false
-);
+var setCode = function (value) {
+  aceEditor.setValue(value)
+}
 
 window.addEventListener(
-    "dragleave",
-    function handleDragOver(e) {
-        document.getElementById("editor").classList.remove("dragOver");
-    },
-    false
-);
+  'dragover',
+  function handleDragOver(e) {
+    e.stopPropagation()
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    document.getElementById('editor').classList.add('dragOver')
+  },
+  false
+)
 
 window.addEventListener(
-    "drop",
-    function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        var file = e.dataTransfer.files[0];
-        document.getElementById("editor").classList.remove("dragOver");
-        var reader = new FileReader();
-        reader.onload = (function(theFile) {
-            return function(e) {
-                if (e.target) {
-                    setCode(e.target.result);
-                }
-            };
-        })(file);
-        reader.readAsText(file);
-    },
-    false
-);
+  'dragleave',
+  function handleDragOver(e) {
+    document.getElementById('editor').classList.remove('dragOver')
+  },
+  false
+)
 
-var aceEditor = ace.edit("editor");
-aceEditor.setTheme("ace/theme/tomorrow_night_eighties");
-aceEditor.setShowPrintMargin(false);
-aceEditor.getSession().setMode("ace/mode/coffee");
-aceEditor.setBehavioursEnabled(false);
-aceEditor.focus();
+window.addEventListener(
+  'drop',
+  function (e) {
+    e.stopPropagation()
+    e.preventDefault()
+    var file = e.dataTransfer.files[0]
+    document.getElementById('editor').classList.remove('dragOver')
+    var reader = new FileReader()
+    reader.onload = (function (theFile) {
+      return function (e) {
+        if (e.target) {
+          setCode(e.target.result)
+        }
+      }
+    })(file)
+    reader.readAsText(file)
+  },
+  false
+)
 
-aceEditor.on("change", function(e) {
-    interpreter.run(aceEditor.getValue());
-    saveLocally();
-});
+var aceEditor = ace.edit('editor')
+aceEditor.setTheme('ace/theme/tomorrow_night_eighties')
+aceEditor.setShowPrintMargin(false)
+aceEditor.getSession().setMode('ace/mode/coffee')
+aceEditor.session.setOptions({
+  tabSize: 2,
+  useSoftTabs: true,
+})
+aceEditor.setBehavioursEnabled(false)
+aceEditor.focus()
 
-display.init();
-setCode(loadCode());
-interpreter.run(aceEditor.getValue());
-if (localStorage.getItem("elements-3d-code" == null)) {
-    localStorage.setItem("elements-3d-code", "");
+aceEditor.on('change', function (e) {
+  interpreter.run(aceEditor.getValue())
+  saveLocally()
+})
+
+display.init()
+setCode(loadCode())
+interpreter.run(aceEditor.getValue())
+if (localStorage.getItem('elements-3d-code' == null)) {
+  localStorage.setItem('elements-3d-code', '')
 }
 
 module.exports = {
-    loadCode: loadCode,
-    resetCode: resetCode,
-    saveLocally: saveLocally,
-    setCode: setCode
-};
+  loadCode: loadCode,
+  resetCode: resetCode,
+  saveLocally: saveLocally,
+  setCode: setCode,
+}
 
-},{"./display":25,"./interpreter":27}],27:[function(require,module,exports){
+},{"./display":26,"./interpreter":28}],28:[function(require,module,exports){
 /*
  * Language intepreter module
  *
@@ -64884,7 +65360,7 @@ module.exports = {
     evalInContext: evalInContext
 };
 
-},{"../language":33,"../model":45,"./display":25,"./scene":28,"coffeescript":3,"three":24}],28:[function(require,module,exports){
+},{"../language":34,"../model":47,"./display":26,"./scene":29,"coffeescript":3,"three":25}],29:[function(require,module,exports){
 var material = require('../language/material'),
   model = require('../model'),
   THREE = require('three'),
@@ -64971,7 +65447,7 @@ module.exports = {
   render: render,
 }
 
-},{"../language/material":37,"../model":45,"three":24,"three-orbit-controls":23}],29:[function(require,module,exports){
+},{"../language/material":38,"../model":47,"three":25,"three-orbit-controls":24}],30:[function(require,module,exports){
 /*
  * Animation language module
  *
@@ -65001,7 +65477,7 @@ module.exports = {
     animate: animate
 };
 
-},{"../model":45}],30:[function(require,module,exports){
+},{"../model":47}],31:[function(require,module,exports){
 var THREE = require("three"),
     model = require("../model");
 
@@ -65033,7 +65509,7 @@ module.exports = {
     lookAt: lookAt
 };
 
-},{"../model":45,"three":24}],31:[function(require,module,exports){
+},{"../model":47,"three":25}],32:[function(require,module,exports){
 /*
  * Color language module
  *
@@ -65058,48 +65534,6 @@ function color(val) {
 }
 
 /*
- * Is a dark color (Below 50% brightness)
- *
- * @param {String} color
- * @return {Boolean}
- */
-function dark(color) {
-  return Color(color).dark()
-}
-
-/*
- * Is a light color (Above 50% brightness)
- *
- * @param {String} color
- * @return {Boolean}
- */
-function light(color) {
-  return Color(color).light()
-}
-
-/*
- * Darken a color by given percentage
- *
- * @param {String} color
- * @param {Number} amount
- * @return {String}
- */
-function darken(color, amount) {
-  return brightness(color, brightness(color) - amount)
-}
-
-/*
- * Lighten a color by given percentage
- *
- * @param {String} color
- * @param {Number} amount
- * @return {String}
- */
-function lighten(color, amount) {
-  return brightness(color, brightness(color) + amount)
-}
-
-/*
  * Get color brightness or set it to value if it's passed
  *
  * @param {String} color
@@ -65107,51 +65541,33 @@ function lighten(color, amount) {
  * @return {String|Number}
  */
 function brightness(color, amount) {
-  return getOrSet('hsl', 2, color, amount)
+  if (amount == null) {
+    return Color(color).lightness()
+  } else {
+    return Color(color).lightness(amount).hex()
+  }
 }
 
 /*
- * Set the brightness of a color
- * @param {String} color
- * @param {Number} amount (between -100 and 100)
- * @return {String}
- */
-
-function setBrightness(color, amount) {
-  return brightness(color, brightness(color) + amount / 2)
-}
-
-/*
- * Saturate a color by given amount (0 to 100)
+ * Set relative brightness of color
  *
  * @param {String} color
- * @param {Number} amount
- * @return {String}
+ * @param {Number}* amount
+ * @return {String|Number}
  */
-function saturate(color, amount) {
-  return saturation(color, saturation(color) + amount)
+function brighten(color, amount) {
+  return Color(color).lighten(amount).hex()
 }
 
 /*
- * Set the saturation of a color
- * @param {String} color
- * @param {Number} amount (between -100 and 100)
- * @return {String}
- */
-
-function setSaturation(color, amount) {
-  return saturation(color, saturation(color) + amount)
-}
-
-/*
- * Desaturate a color by given amount (0 to 100)
+ * Set relative brightness of color
  *
  * @param {String} color
- * @param {Number} amount
- * @return {String}
+ * @param {Number}* amount
+ * @return {String|Number}
  */
-function desaturate(color, amount) {
-  return saturation(color, saturation(color) - amount)
+function darken(color, amount) {
+  return Color(color).darken(amount).hex()
 }
 
 /*
@@ -65162,7 +65578,11 @@ function desaturate(color, amount) {
  * @return {String|Number}
  */
 function saturation(color, amount) {
-  return getOrSet('hsl', 1, color, amount)
+  if (amount == null) {
+    return Color(color).saturationl()
+  } else {
+    return Color(color).saturationl(amount).hex()
+  }
 }
 
 /*
@@ -65173,7 +65593,11 @@ function saturation(color, amount) {
  * @return {String|Number}
  */
 function hue(color, amount) {
-  return getOrSet('hsl', 0, color, amount)
+  if (amount == null) {
+    return Color(color).hue()
+  } else {
+    return Color(color).hue(amount).hex()
+  }
 }
 
 /*
@@ -65213,17 +65637,6 @@ function rgba(red, green, blue, alpha) {
 }
 
 /*
- * Set current model opacity attributes
- *
- * @param {Number} attributes
- * @return void
- */
-function opacity(val) {
-  model.settings.opacity = val || 1
-  material.updateMaterial()
-}
-
-/*
  * Mix given colors balancing on given percentage
  *
  * @param {String} a
@@ -65235,57 +65648,32 @@ function mix(a, b, amount) {
   amount = amount || 50
   return Color(a)
     .mix(Color(b), amount / 100)
-    .rgbaString()
+    .hex()
 }
 
-/*
- * Get or set utility re-used by methods in this module
- *
- * @param {String|void} mode
- * @param {String} key
- * @param {String} color
- * @param {Number} amount
- * @return {String|Number}
- */
-function getOrSet(mode, key, color, amount) {
-  color = Color(color)
-
-  if (typeof amount === 'undefined') {
-    return mode ? color.values[mode][key] : color.values[key]
+function lightness(color, amount) {
+  if (amount == null) {
+    return Color(color).lightness()
+  } else {
+    return Color(color).lightness(amount).hex()
   }
-
-  if (key === 'alpha') {
-    return color.alpha(amount).rgbaString()
-  }
-
-  var values = color.values[mode]
-
-  values[key] = amount
-
-  return Color().hsl(values).rgbaString()
 }
 
 module.exports = {
-  color: color,
-  dark: dark,
-  light: light,
-  lighten: lighten,
-  darken: darken,
-  brightness: brightness,
-  mix: mix,
-  saturation: saturation,
-  saturate: saturate,
-  desaturate: desaturate,
-  hue: hue,
-  rotate: rotate,
-  rgb: rgb,
-  rgba: rgba,
-  opacity: opacity,
-  setBrightness: setBrightness,
-  setSaturation: setSaturation,
+  color,
+  brightness,
+  brighten,
+  darken,
+  mix,
+  saturation,
+  hue,
+  rotate,
+  rgb,
+  rgba,
+  lightness,
 }
 
-},{"../model":45,"./material":37,"./utils":44,"color":18}],32:[function(require,module,exports){
+},{"../model":47,"./material":38,"./utils":46,"color":18}],33:[function(require,module,exports){
 /*
  * Compound shapes language module
  *
@@ -65413,7 +65801,7 @@ module.exports = {
   capsule: capsule,
 }
 
-},{"../model":45,"three":24}],33:[function(require,module,exports){
+},{"../model":47,"three":25}],34:[function(require,module,exports){
 /*
  * Language modules index
  *
@@ -65421,23 +65809,25 @@ module.exports = {
  */
 
 module.exports = {
-    animation: require('./animation'),
-    camera: require('./camera'),
-    color: require('./color'),
-    compounds: require('./compounds'),
-    keywords: require('./keywords.json'),
-    light: require('./light'),
-    lines: require('./lines'),
-    material: require('./material'),
-    math: require('./math'),
-    palette: require('./palette.json'),
-    primitives: require('./primitives'),
-    space: require('./space'),
-    time: require('./time'),
-    turtle: require('./turtle')
-};
+  animation: require('./animation'),
+  camera: require('./camera'),
+  color: require('./color'),
+  compounds: require('./compounds'),
+  keywords: require('./keywords.json'),
+  light: require('./light'),
+  lines: require('./lines'),
+  material: require('./material'),
+  math: require('./math'),
+  palette: require('./palette.json'),
+  primitives: require('./primitives'),
+  space: require('./space'),
+  time: require('./time'),
+  turtle: require('./turtle'),
+  textures: require('./textures'),
+  THREE: require('three'),
+}
 
-},{"./animation":29,"./camera":30,"./color":31,"./compounds":32,"./keywords.json":34,"./light":35,"./lines":36,"./material":37,"./math":38,"./palette.json":39,"./primitives":40,"./space":41,"./time":42,"./turtle":43}],34:[function(require,module,exports){
+},{"./animation":30,"./camera":31,"./color":32,"./compounds":33,"./keywords.json":35,"./light":36,"./lines":37,"./material":38,"./math":39,"./palette.json":40,"./primitives":41,"./space":42,"./textures":43,"./time":44,"./turtle":45,"three":25}],35:[function(require,module,exports){
 module.exports={
     "flat": "flat",
     "frontsided": 0,
@@ -65446,7 +65836,7 @@ module.exports={
     "smooth": "smooth"
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /*
  * Lights language module
  *
@@ -65572,7 +65962,7 @@ module.exports = {
     spot: spot
 };
 
-},{"../model":45,"./utils":44,"three":24}],36:[function(require,module,exports){
+},{"../model":47,"./utils":46,"three":25}],37:[function(require,module,exports){
 var utils = require("./utils"),
     model = require("../model"),
     THREE = require("three");
@@ -65655,7 +66045,7 @@ module.exports = {
     stroke: stroke
 };
 
-},{"../model":45,"./utils":44,"three":24}],37:[function(require,module,exports){
+},{"../model":47,"./utils":46,"three":25}],38:[function(require,module,exports){
 /*
  * Material language module
  *
@@ -65779,7 +66169,7 @@ module.exports = {
   updateMaterial: updateMaterial,
 }
 
-},{"../model":45,"three":24}],38:[function(require,module,exports){
+},{"../model":47,"three":25}],39:[function(require,module,exports){
 var math = Object.getOwnPropertyNames(Math);
 for (var key in math) {
     module.exports[math[key]] = Math[math[key]];
@@ -65810,7 +66200,7 @@ module.exports.random = function(min, max, float) {
     return Math.floor(out);
 };
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports={
     "aliceblue": "#F0F8FF",
     "antiquewhite": "#FAEBD7",
@@ -65966,7 +66356,7 @@ module.exports={
     "yellowgreen": "#9ACD32"
 }
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 /*
  * Shapes language module
  *
@@ -66254,7 +66644,7 @@ module.exports = {
     torusKnot: torusKnot
 };
 
-},{"../model":45,"three":24}],41:[function(require,module,exports){
+},{"../model":47,"three":25}],42:[function(require,module,exports){
 /*
  * Space language module
  *
@@ -66298,7 +66688,37 @@ module.exports = {
     move: move
 };
 
-},{"../model":45}],42:[function(require,module,exports){
+},{"../model":47}],43:[function(require,module,exports){
+const { createNoise2D } = require('simplex-noise')
+const THREE = require('three')
+
+function noise2D(width, height) {
+  const size = width * height
+  const data = new Uint8Array(size) // Single channel
+
+  const _noise2D = createNoise2D()
+  for (let i = 0; i < size; i++) {
+    const x = i % width
+    const y = Math.floor(i / width)
+    const noiseValue = (_noise2D(x / 10, y / 10) + 1) * 0.5 // Normalize noise to [0, 1]
+    data[i] = Math.round(noiseValue * 255) // Map to [0, 255]
+  }
+
+  const texture = new THREE.DataTexture(
+    data,
+    width,
+    height,
+    THREE.LuminanceFormat
+  )
+  texture.needsUpdate = true
+  return texture
+}
+
+module.exports = {
+  noise2D,
+}
+
+},{"simplex-noise":23,"three":25}],44:[function(require,module,exports){
 /*
  * Time language module
  *
@@ -66307,7 +66727,7 @@ module.exports = {
 
 module.exports.time = Date.now;
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 const space = require('./space'),
   lines = require('./lines'),
   THREE = require('three')
@@ -66326,7 +66746,8 @@ class Turtle {
     theta = 90,
     productions = {},
     F = this.F,
-  }) {
+  } = {}) {
+    this.F = F
     this.x = x
     this.y = y
     this.z = z
@@ -66516,7 +66937,7 @@ module.exports = {
   Turtle,
 }
 
-},{"./lines":36,"./space":41,"three":24}],44:[function(require,module,exports){
+},{"./lines":37,"./space":42,"three":25}],46:[function(require,module,exports){
 /*
  * Utils language module
  *
@@ -66599,11 +67020,11 @@ module.exports = {
     sanitizeColor: sanitizeColor
 };
 
-},{"./palette.json":39}],45:[function(require,module,exports){
+},{"./palette.json":40}],47:[function(require,module,exports){
 module.exports = {
   elements: {
     lights: [],
   }
 };
 
-},{}]},{},[26]);
+},{}]},{},[27]);

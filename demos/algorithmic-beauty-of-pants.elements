@@ -1,0 +1,40 @@
+generations = 4
+
+production = (axiom, generations) -> 
+  if generations > 0
+    successor = ''
+    for token in axiom
+      switch token
+        when 'A' then successor += '[&FL!A]/////’[&FL!A]///////’[&FL!A]'
+        when 'F' then successor += 'S/////F'
+        when 'S' then successor += 'F L'
+        when 'L' then successor += '[’’’∧∧{-f+f+f-|-f+f+f}]'
+        else successor += token
+    return production(successor, generations - 1)
+  else 
+    return axiom
+    
+move 0, -50
+color green
+plane(10000).rotateX(Math.PI * .5)
+
+color blue
+cube 10000
+
+
+turtle = new Turtle(
+    theta: 22.5
+    F: (delta = @delta) -> 
+        prime = @h.clone().multiplyScalar(delta)
+        moveTo @x, @y, @z
+        stroke(rotate(red, (@x + @y) * generations))
+        capsule prime.x, prime.y, + prime.z
+        line prime.x, prime.y, + prime.z
+        move prime.x, prime.y, + prime.z
+        @x += prime.x
+        @y += prime.y
+        @z += prime.z
+)
+turtle.up 90
+turtle.f(-50)
+turtle.translate(production('FA', generations))

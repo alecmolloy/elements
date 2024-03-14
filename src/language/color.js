@@ -22,48 +22,6 @@ function color(val) {
 }
 
 /*
- * Is a dark color (Below 50% brightness)
- *
- * @param {String} color
- * @return {Boolean}
- */
-function dark(color) {
-  return Color(color).dark()
-}
-
-/*
- * Is a light color (Above 50% brightness)
- *
- * @param {String} color
- * @return {Boolean}
- */
-function light(color) {
-  return Color(color).light()
-}
-
-/*
- * Darken a color by given percentage
- *
- * @param {String} color
- * @param {Number} amount
- * @return {String}
- */
-function darken(color, amount) {
-  return brightness(color, brightness(color) - amount)
-}
-
-/*
- * Lighten a color by given percentage
- *
- * @param {String} color
- * @param {Number} amount
- * @return {String}
- */
-function lighten(color, amount) {
-  return brightness(color, brightness(color) + amount)
-}
-
-/*
  * Get color brightness or set it to value if it's passed
  *
  * @param {String} color
@@ -71,51 +29,33 @@ function lighten(color, amount) {
  * @return {String|Number}
  */
 function brightness(color, amount) {
-  return getOrSet('hsl', 2, color, amount)
+  if (amount == null) {
+    return Color(color).lightness()
+  } else {
+    return Color(color).lightness(amount).hex()
+  }
 }
 
 /*
- * Set the brightness of a color
- * @param {String} color
- * @param {Number} amount (between -100 and 100)
- * @return {String}
- */
-
-function setBrightness(color, amount) {
-  return brightness(color, brightness(color) + amount / 2)
-}
-
-/*
- * Saturate a color by given amount (0 to 100)
+ * Set relative brightness of color
  *
  * @param {String} color
- * @param {Number} amount
- * @return {String}
+ * @param {Number}* amount
+ * @return {String|Number}
  */
-function saturate(color, amount) {
-  return saturation(color, saturation(color) + amount)
+function brighten(color, amount) {
+  return Color(color).lighten(amount).hex()
 }
 
 /*
- * Set the saturation of a color
- * @param {String} color
- * @param {Number} amount (between -100 and 100)
- * @return {String}
- */
-
-function setSaturation(color, amount) {
-  return saturation(color, saturation(color) + amount)
-}
-
-/*
- * Desaturate a color by given amount (0 to 100)
+ * Set relative brightness of color
  *
  * @param {String} color
- * @param {Number} amount
- * @return {String}
+ * @param {Number}* amount
+ * @return {String|Number}
  */
-function desaturate(color, amount) {
-  return saturation(color, saturation(color) - amount)
+function darken(color, amount) {
+  return Color(color).darken(amount).hex()
 }
 
 /*
@@ -126,7 +66,11 @@ function desaturate(color, amount) {
  * @return {String|Number}
  */
 function saturation(color, amount) {
-  return getOrSet('hsl', 1, color, amount)
+  if (amount == null) {
+    return Color(color).saturationl()
+  } else {
+    return Color(color).saturationl(amount).hex()
+  }
 }
 
 /*
@@ -137,7 +81,11 @@ function saturation(color, amount) {
  * @return {String|Number}
  */
 function hue(color, amount) {
-  return getOrSet('hsl', 0, color, amount)
+  if (amount == null) {
+    return Color(color).hue()
+  } else {
+    return Color(color).hue(amount).hex()
+  }
 }
 
 /*
@@ -177,17 +125,6 @@ function rgba(red, green, blue, alpha) {
 }
 
 /*
- * Set current model opacity attributes
- *
- * @param {Number} attributes
- * @return void
- */
-function opacity(val) {
-  model.settings.opacity = val || 1
-  material.updateMaterial()
-}
-
-/*
  * Mix given colors balancing on given percentage
  *
  * @param {String} a
@@ -199,52 +136,27 @@ function mix(a, b, amount) {
   amount = amount || 50
   return Color(a)
     .mix(Color(b), amount / 100)
-    .rgbaString()
+    .hex()
 }
 
-/*
- * Get or set utility re-used by methods in this module
- *
- * @param {String|void} mode
- * @param {String} key
- * @param {String} color
- * @param {Number} amount
- * @return {String|Number}
- */
-function getOrSet(mode, key, color, amount) {
-  color = Color(color)
-
-  if (typeof amount === 'undefined') {
-    return mode ? color.values[mode][key] : color.values[key]
+function lightness(color, amount) {
+  if (amount == null) {
+    return Color(color).lightness()
+  } else {
+    return Color(color).lightness(amount).hex()
   }
-
-  if (key === 'alpha') {
-    return color.alpha(amount).rgbaString()
-  }
-
-  var values = color.values[mode]
-
-  values[key] = amount
-
-  return Color().hsl(values).rgbaString()
 }
 
 module.exports = {
-  color: color,
-  dark: dark,
-  light: light,
-  lighten: lighten,
-  darken: darken,
-  brightness: brightness,
-  mix: mix,
-  saturation: saturation,
-  saturate: saturate,
-  desaturate: desaturate,
-  hue: hue,
-  rotate: rotate,
-  rgb: rgb,
-  rgba: rgba,
-  opacity: opacity,
-  setBrightness: setBrightness,
-  setSaturation: setSaturation,
+  color,
+  brightness,
+  brighten,
+  darken,
+  mix,
+  saturation,
+  hue,
+  rotate,
+  rgb,
+  rgba,
+  lightness,
 }

@@ -24,12 +24,13 @@
     "morgan": "1.10.0",
     "pm2": "5.3.1",
     "pug": "^2.0.3",
+    "simplex-noise": "4.0.1",
     "three": "0.98.0",
     "three-orbit-controls": "82.1.0",
     "uglify-js": "^3.17.4"
   },
   "devDependencies": {
     "browserify": "^16.2.3",
-    "nodemon": "1.18.5"
+    "nodemon": "3.1.0"
   }
 }
